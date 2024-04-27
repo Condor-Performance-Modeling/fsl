@@ -22,27 +22,28 @@ transform uf1
   uarch oly      //Model will supply the uarch needed by MachineInfo.hpp
   ioput iop      //Model will attach iop to it's instr io structures
 
+  gpr g0,g1,g2,g3
+  s12 c1,c2
+
   sequence seq_uf1(iop,rv64gc) { //TEST: optional explicit arg form
-    lbu    g1,c1(g2)   //Note G1 in the rd and rs1 positions
+    lbu    g1,c1(g2) //Note G1 in the rd and rs1 positions
     addi   g3,g1,c2
   }
 
   //TEST: optional explicit arguments form
   constraints cns_uf1(seq_uf1,iop,rv64gc,oly) {
-    gpr g0,g1,g2,g3
-    s12 c1,c2
-
-    //There is no need to contrain this further
+    _pass_
   }
 
   conversion cnv_uf1(seq_uf1,iop,cns_uf1) {
     //TEST: automatic creation of mnemonic, "lbu_addi"
+    //TEST: override auto mnemonic, "lbu_addi"
     instr lbu_addi
-    lbu_bez(mnemonic="lbu_addi")
+    lbu_addi.mnemonic(lbu_addix)
 
     //TEST: automatically merge the operands and instructions in the
     //sequence in the order listed.
-    lbu_bez(morph(seq_uf1))
+    lbu_addi.morph(seq_uf1)
   }
 }
 // ----------------------------------------------------------------
@@ -63,12 +64,13 @@ transform uf4
     c.beqz g3,c2
   }
 
+  gpr g1,g2,g3
+  s12 c1
+  //SHOULD_FAIL: s5 should be s8
+  s5  c2
+
   //TEST: implicit arguments
   constraints cns_uf4 { //showing the proposed implicit arguments feature
-    gpr g1,g2,g3
-    s12 c1
-    //SHOULD_FAIL: s5 should be s8
-    s5  c2
 
     //TEST: redundant _pass_
     _pass_ 
@@ -77,8 +79,8 @@ transform uf4
   //TEST: implicit arguments
   conversion cnv_uf4 {
     instr lbu_bez
-  //TEST: morph command
-    lbu_bez(morph(seq_uf4))
+    //TEST: morph command
+    lbu_bez.morph(seq_uf4)
   }
 }
 // ----------------------------------------------------------------
@@ -100,7 +102,7 @@ transform uf8
 
   conversion cnv_uf8 {
     instr ins_uf8
-    lbu_bez(morph(seq_uf8))
+    lbu_bez.morph(seq_uf8)
   }
 
   //TEST: no explicit constraints
@@ -121,6 +123,10 @@ transform uf10
 {
   //TEST: shared external prolog
   prolog plog1
+
+  gpr  g1,g2,g3,g4
+  u5   c1
+  s12  c2
   
   //showing the UID version of a sequence
   sequence seq_uf10 { 
@@ -129,9 +135,6 @@ transform uf10
   }
   
   constraints cns_uf10 { 
-    gpr  g1,g2,g3,g4
-    u5   c1
-    s12  c2
     //TEST: inequality syntax
     g1 != g2
     g3 != g4
@@ -163,22 +166,24 @@ transform uf12 {
     addi  g2,g2,c2
   }
 
+  gpr g1
+  gpr g2
+  s20 c1
+  s6  c2 
+
   constraints cns_u12 {
-    gpr g1
-    gpr g2
-    s20 c1
-    s6  c2 
+    _pass_
   }
 
   //TEST: instr method call syntax
   conversion cnv_u12 {
-    instr anyname;
+    instr anyname
     anyname.mnemonic("jalsp")
     anyname.opc(*)
     anyname.dst(g2)
     anyname.src({g1,g2})
     anyname.type("branch")
-    FIXME: add emit or what ever
+    //FIXME: add emit or what ever
   }
 }
 // ----------------------------------------------------------------
@@ -228,7 +233,7 @@ transform uf14
     // gpr g2    //9:5  
     // gpr g1    //4:0  
     //TEST: encode order expression
-    enc_u14.encode_order(opc,c2,c1,g1,g3,g2,g4)
+    enc_u14.encode_order({opc,c2,c1,g1,g3,g2,g4})
   }
 }
 // ----------------------------------------------------------------
@@ -246,14 +251,16 @@ transform uf16
     ret 
   }
 
+  gpr g0,g1
+  s12 c1
+
   constraints cns_u16 {
-    gpr g0,g1
-    s12 c1
     g0 == 0
   }
 
   conversion cnv_u16 {
-    instr i_uf16(morph(seq_u16))
+    instr i_uf16
+    i_uf16.morph(seq_u16)
   }
 }
 // ----------------------------------------------------------------
@@ -289,13 +296,15 @@ transform uf18
   }
 
   //TEST: expression syntax - boolean ops, intermediate variable
+  //FIXME: u20 cx = c2 & { 8'hff,c1 }
+  u20 cx = c2
+
   conversion cnv_u18 {
-    u20 cx = c2 & {8'hFF,c1}
 
     encoding enc_u18
     //TEST: g5 used, not initialized
     //TEST: inline opc
-    enc_u18.encode_order(opc=0xF7FF,g1,cx,g3,g2,g5)
+    enc_u18.encode_order({opc=0xF7FF,g1,cx,g3,g2,g5})
   }
 }
 // ----------------------------------------------------------------
@@ -313,13 +322,16 @@ transform uf20
     mv  _gg_,g_share
   }
 
-  constraints cns_u20 {
     gpr g100,g__,_gg_,g_share
     u6 c_5_0x
+
+  constraints cns_u20 {
+    _pass_
   }
 
   conversion cnv_u20 {
     //SHOULD_FAIL: no conversion statement(s)
+    _pass_
   }
 }
 // ----------------------------------------------------------------
@@ -338,9 +350,11 @@ transform uf22
     jal    C, D
   }
 
+  gpr A,B,C
+  s20 D
+
   constraints cns_u22 {
-    gpr A,B,C
-    s20 D
+    _pass_
   }
 
   //TEST: concatenate operator
@@ -361,6 +375,7 @@ transform uf24 {
 
   gpr g1,g2,g3,g4,g5,g6
   s12, C,D,E
+
   sequence seq_u24 {
     sd     x15,0(x25)
     sd     x18,-176(x8)
