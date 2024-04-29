@@ -61,7 +61,7 @@ VLOG_HEX  [0-9]+'[hH][0-9a-fA-F]+
   "*/"        { BEGIN(INITIAL); }
   [^*\n]+     { /* Ignore non-newline and non-asterisk characters */ }
   "*"         { /* Ignore standalone asterisk characters */ }
-  "\n"        { cout<<"HERE C"<<endl; ++FP->lineNo; } 
+  "\n"        { E("C") ++FP->lineNo; } 
 }
 
 \/\/[^\n]*    { E("COMMENT") }
@@ -69,7 +69,8 @@ VLOG_HEX  [0-9]+'[hH][0-9a-fA-F]+
 "sequence"    { BEGIN(SEQUENCE); }
 <SEQUENCE>{
   "}"         { BEGIN(INITIAL); }
-  "\n"        { E("SEQ"); ++FP->lineNo; }
+  [^}\n]+     { /* Ignore non-newline/non-brace characters */ }
+  "\n"        { E("SEQ")  ++FP->lineNo; }
 }
 
 _fail_       { CAPT(FAIL);         }
@@ -90,16 +91,20 @@ ioput        { CAPT(IOPUT);        }
 isa          { CAPT(ISA);          }
 mnemonic     { CAPT(MNEMONIC);     }
 morph        { CAPT(MORPH);        }
-opc          { CAPT(OPC); }
+opc          { CAPT(OPC);          }
 prolog       { CAPT(PROLOG);       }
-rdx          { CAPT(RDX); }
-rsx          { CAPT(RSX); }
+rdx          { CAPT(RDX);          }
+replace      { CAPT(REPLACE);      }
+rsx          { CAPT(RSX);          }
 s0           { CAPT(S0);           }
 s1           { CAPT(S1);           }
 transform    { CAPT(TRANSFORM);    }
 true         { CAPT(TRUE);         }
-type         { CAPT(TYPE); }
+type         { CAPT(TYPE);         }
 uarch        { CAPT(UARCH);        }
+writePorts   { CAPT(WRITEPORTS);        }
+readPorts    { CAPT(READPORTS);        }
+requiredBits { CAPT(REQUIREDBITS);        }
 
 _req_        {  /* get a unique ID for _req_ symbols and add to symtab */
                std::string symName = FP->newReqSymbol();
@@ -282,6 +287,7 @@ int check_type(void)
 // ------------------------------------------------------------------
 void yyerror(const char *s) {
   std::cout << "-E: "<<FP->currentFile<<": "
-            << s <<" line "<<std::dec<<FP->lineNo<<std::endl;
+            << s <<" " << yytext <<", line "
+            <<std::dec<<FP->lineNo<<std::endl;
 }
 

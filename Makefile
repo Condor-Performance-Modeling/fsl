@@ -28,8 +28,9 @@ ALL_OBJ = $(SRC_OBJ) $(PARSE_OBJ)
 INC  = -I./inc -I./obj
 LIBS = -lboost_program_options
 
-INP_FILES = -i syntax_tests/_1_syntax_test.fsl \
-            -i examples/dhrystone.fsl
+#INP_FILES = -i syntax_tests/_1_syntax_test.fsl \
+
+INP_FILES = -i examples/dhrystone.fsl
 
 OUT_FILE  = -o output.txt
 
@@ -61,8 +62,9 @@ $(FLEX_OUT): $(FLEX_SRC) $(BISON_H)
 	@mkdir -p obj
 	$(FLEX) -o $(FLEX_OUT) $(FLEX_SRC)
 
+#TRACE=--trace_en
 run:  $(TARGET)
-	$(TARGET) $(INP_FILES) $(OUT_FILE) --trace_en
+	$(TARGET) $(INP_FILES) $(OUT_FILE) $(TRACE)
 
 # Clean build files
 clean:

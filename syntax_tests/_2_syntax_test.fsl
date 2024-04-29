@@ -16,21 +16,6 @@
 // 188390 instructions in small test case trace
 //
 // ----------------------------------------------------------------
-//transform TEMPLATE {
-//  prolog plg
-//  sequence seq_uXX {
-//    SSS
-//  }
-//
-//  constraints cns_uXX {
-//    CCC
-//  }
-//
-//  conversion cnv_uXX {
-//    VVV
-//  }
-//}
-// ----------------------------------------------------------------
 // Shared prolog
 // ----------------------------------------------------------------
 prolog plg
@@ -288,7 +273,7 @@ transform uf24_example
   // |---------------------------------------------------------------------|
   //
   // With the above we are going to assume that since we are executing
-  // the conversion clause our machine has enough rd/wr ports so we will
+  // the conversion clause, our machine has enough rd/wr ports so we will
   // express the rs2/rs1/imm for each, but share the opcode and funct3
   //
   // seq[0]         seq[1]         seq[0]       funct3 opcode
@@ -313,3 +298,69 @@ transform uf24_example
     instr i_uf24_example(encoding(enc))
   }
 }
+
+// ----------------------------------------------------------------
+//  Using the sequence composition syntax
+// ----------------------------------------------------------------
+prolog plg
+{
+  isa   rv64gc
+  uarch oly
+  ioput iop
+}
+
+transform composition
+{
+  prolog plg  //new: prolog can be external and shared
+  gpr g1..9   //new: variable naming expansion syntax
+
+  //setof is a collection type
+  //hasAttr will scan the contents of the isa specification named rv64gc
+  //for objects with the rtype and logical attributes, 'rtype' and 'logical'
+  //must be known to the isa object.
+  setof r_bools = plg.rv64gc.hasAttr(rtype).hasAttr(logical)
+
+  //If the constraints or conversion clauses access g1..g9 then
+  //it would be written this way:
+  sequence comp_seq_a {
+    r_bools g1, g2, g3
+    r_bools g4, g5, g6
+    r_bools g7, g8, g9
+  }
+
+  //Since the constraints do not care about which values g1..9
+  //hold this can be written as simply
+  sequence comp_seq_b {
+    r_bools 
+    r_bools 
+    r_bools
+  }
+
+  //These are redundant, only _a or _b is really needed depending
+  //on the sequence used.
+  constraints {
+    comp_seq_a.writePorts() <= plg.oly.writePorts()
+    comp_seq_a.readPorts()  <= plg.oly.readPorts()
+    comp_seq_b.writePorts() <= plg.oly.writePorts()
+    comp_seq_b.readPorts()  <= plg.oly.readPorts()
+  }
+
+  //fsl is the standard library equivalent
+  //morph() combines the sequence as specified by the
+  //user defined function object registered with the Fusion API
+  //by default this just calls the mavis equivalent
+  conversion {
+    //declare an instruction object, initialize using the fsl.morph()
+    //operation performed on the sequence
+    instr i_comp(fsl.morph(comp_seq_b))
+
+    //by default the mnemonic is the same as the instr object name.
+    //this can be overridden
+    i_comp.mnemonic("r_bool")
+
+    //this is using the replace idiom, the sequence objects in .input 
+    //are removed and replaced with the instruction created by morphing.
+    plg.iop.input.replace(comp_seq_b,i_comp)
+  }
+}
+

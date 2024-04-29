@@ -43,6 +43,8 @@ extern void yyerror(const char *s);
 %token IOPUT
 %token ISA
 %token MNEMONIC
+%token REPLACE
+%token REQUIREDBITS
 %token OPC
 %token SRC
 %token DST
@@ -65,6 +67,8 @@ extern void yyerror(const char *s);
 %token UID
 %token TRUE
 %token FALSE
+%token WRITEPORTS
+%token READPORTS
 
 %token QSTRING ID CONSTANT STRING_LITERAL SIZEOF
 %token PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
@@ -117,7 +121,7 @@ transform_statement:
   | uarch_decl
   | ioput_decl
   | variable_decl
-//  | sequence_decl
+  | selection_statement
   | constraints_definition
   | conversion_definition
   ;
@@ -142,8 +146,14 @@ isa_decl:   ISA   id ;
 uarch_decl: UARCH id ;
 ioput_decl: IOPUT id ;
 
+variable_definition:
+    variable_type id '=' assignment_expression
+  | variable_type id '=' '{' concatenate_list '}'
+  ;
+
 variable_decl:
     variable_type arg_expr_list
+  | variable_definition
   ;
 
 variable_type:
@@ -164,17 +174,36 @@ constraints_statements:
   | constraints_statements constraints_statement
   ;
 
+//expr:
+//    ID 
+//  | expr '.' ID 
+//  | expr '.' WRITEPORTS '(' ')'
+//  | expr '.' READPORTS '(' ')' 
+//  | expr LE_OP expr           
+//  | expr GE_OP expr          
+//  ;
+
 constraints_statement:
     pass_fail_statement
-  | id NE_OP id
-  | id EQ_OP id
-  | id NE_OP constant
-  | id EQ_OP constant
+  | chained_id_list comparison_operator chained_id_list
+  | chained_id_list comparison_operator constant
+  | chained_id_list comparison_operator chained_id_list LEFT_OP constant
+  | chained_id_list '.' known_method '(' ')' comparison_operator
+    chained_id_list '.' known_method '(' ')'
+  | chained_id_list '.' known_method '(' id ')' comparison_operator constant
   | selection_statement
   ;
 
+comparison_operator:
+    LE_OP
+  | GE_OP
+  | EQ_OP
+  | NE_OP
+  ;
+
 conversion_definition:
-    CONVERSION id                       '{' conversion_statements '}'
+    CONVERSION                          '{' conversion_statements '}'
+  | CONVERSION id                       '{' conversion_statements '}'
   | CONVERSION id '(' arg_expr_list ')' '{'                        '}'
   | CONVERSION id '(' arg_expr_list ')' '{' conversion_statements '}'
   ;
@@ -186,6 +215,7 @@ conversion_statements:
 
 conversion_statement:
     pass_fail_statement
+  | variable_decl
   | encoding_decl
   | encoding_definition
   | instr_decl
@@ -195,6 +225,7 @@ conversion_statement:
   | chained_id_list '.' known_method '(' qstring  ')'
   | chained_id_list '.' known_method '(' '*'      ')'
   | chained_id_list '.' known_method '(' '{' concatenate_list '}' ')'
+  | chained_id_list '.' REPLACE '(' comma_sep_list ')'
   ;
 
 concatenate_list:
@@ -204,9 +235,19 @@ concatenate_list:
 
 concatenate_elem:
     id
+  | select_elem
   | OPC
   | constant
   | known_method '=' constant
+  ;
+
+comma_sep_list:
+    id
+  | comma_sep_list ',' id
+  ;
+
+select_elem:
+    id '[' constant ']'
   ;
 
 chained_id_list:
@@ -217,6 +258,10 @@ chained_id_list:
 known_method:
     MNEMONIC
   | ENCODE_ORDER
+  | WRITEPORTS
+  | READPORTS
+  | REQUIREDBITS
+  | ENCODING
   | OPC
   | SRC
   | DST
@@ -231,7 +276,19 @@ instr_decl:
   ;
 
 instr_definition:
-    INSTR id '(' arg_assignment_list ')'
+    INSTR id '(' arg_assignment_list      ')'
+  | INSTR id '(' '{' concatenate_list '}' ')'
+  | INSTR id '(' '{' encode_list      '}' ')'
+  | INSTR id '(' known_method '(' id ')'      ')'
+  ;
+
+encode_list:
+    encode_elem
+  | encode_list ',' encode_elem
+  ;
+
+encode_elem:
+    id '[' constant ']' '.' ENCODING
   ;
 
 encoding_decl:
@@ -251,7 +308,9 @@ arg_assignment:
     known_method '=' qstring
   | known_method '=' constant
   | known_method '=' '{' arg_expr_list '}'
+  | id           '=' '{' arg_expr_list '}'
   ;
+
 
 pass_fail_statement:
     PASS
@@ -274,6 +333,7 @@ postfix_expression
 	| postfix_expression PTR_OP id
 	| postfix_expression INC_OP
 	| postfix_expression DEC_OP
+	| postfix_expression '.' ENCODING '(' ')'
 //	| '(' type_name ')' '{' initializer_list '}'
 //	| '(' type_name ')' '{' initializer_list ',' '}'
 	;
