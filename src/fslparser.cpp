@@ -63,6 +63,8 @@ bool FslParser::parseFiles()
   }
 
   for(const auto & fn : opts->input_files) {
+    if(opts->verbose) msg->imsg("Parsing "+tq(fn));
+
     if (!parse(fn)) {
         // parse() emits the error message
         return false;

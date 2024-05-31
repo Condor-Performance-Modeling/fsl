@@ -22,6 +22,51 @@ extern int  check_type(void);
 extern void count(void);
 int column = 0;
 // ----------------------------------------------------------------
+//HERE
+//"->"       { count(); return(PTR_OP); }
+//"_Bool"    { CAPT(BOOL); }
+//"break"    { CAPT(BREAK); }
+//"register"   { CAPT(REGISTER); }
+//"static"     { CAPT(STATIC); }
+//"typedef"    { CAPT(TYPEDEF); }
+//"case"       { CAPT(CASE); }
+//"char"       { CAPT(CHAR); }
+//"_Complex"   { CAPT(COMPLEX); }
+//"const"      { CAPT(CONST); }
+//"continue"   { CAPT(CONTINUE); }
+//"default"    { CAPT(DEFAULT); }
+//"do"         { CAPT(DO); }
+//"double"     { CAPT(DOUBLE); }
+//"enum"       { CAPT(ENUM); }
+//"float"      { CAPT(FLOAT); }
+//"goto"       { CAPT(GOTO); }
+//"_Imaginary" { CAPT(IMAGINARY); }
+//"inline"     { CAPT(INLINE); }
+//"int"        { CAPT(INT); }
+//"long"       { CAPT(LONG); }
+//"restrict"   { CAPT(RESTRICT); }
+//"short"      { CAPT(SHORT); }
+//"signed"     { CAPT(SIGNED); }
+//"sizeof"     { CAPT(SIZEOF); }
+//"struct"     { CAPT(STRUCT); }
+//"switch"     { CAPT(SWITCH); }
+//"union"      { CAPT(UNION); }
+//"unsigned"   { CAPT(UNSIGNED); }
+//"void"       { CAPT(VOID); }
+//"volatile"   { CAPT(VOLATILE); }
+//"while"      { CAPT(WHILE); }
+//"..."      { count(); return(ELLIPSIS); }
+//">>="      { count(); return(RIGHT_ASSIGN); }
+//"<<="      { count(); return(LEFT_ASSIGN); }
+//"+="       { count(); return(ADD_ASSIGN); }
+//"-="       { count(); return(SUB_ASSIGN); }
+//"*="       { count(); return(MUL_ASSIGN); }
+//"/="       { count(); return(DIV_ASSIGN); }
+//"%="       { count(); return(MOD_ASSIGN); }
+//"&="       { count(); return(AND_ASSIGN); }
+//"^="       { count(); return(XOR_ASSIGN); }
+//"|="       { count(); return(OR_ASSIGN); }
+
 // ----------------------------------------------------------------
 #define YY_DECL extern int yylex()
 #define E(s) if(FP->TRACE_EN) cout<<dec<<FP->lineNo<<": "<<s<<endl;
@@ -98,6 +143,7 @@ replace      { CAPT(REPLACE);      }
 rsx          { CAPT(RSX);          }
 s0           { CAPT(S0);           }
 s1           { CAPT(S1);           }
+string       { CAPT(STRING);       }
 transform    { CAPT(TRANSFORM);    }
 true         { CAPT(TRUE);         }
 type         { CAPT(TYPE);         }
@@ -120,42 +166,12 @@ _opt_        { /* get a unique ID for _opt_ symbols and add to symtab */
                CAPT(OPT_TOKEN);
              }
 
-"_Bool"      { CAPT(BOOL); }
-"break"      { CAPT(BREAK); }
-"case"       { CAPT(CASE); }
-"char"       { CAPT(CHAR); }
-"_Complex"   { CAPT(COMPLEX); }
-"const"      { CAPT(CONST); }
-"continue"   { CAPT(CONTINUE); }
-"default"    { CAPT(DEFAULT); }
-"do"         { CAPT(DO); }
-"double"     { CAPT(DOUBLE); }
 "else"       { CAPT(ELSE); }
-"enum"       { CAPT(ENUM); }
 "extern"     { CAPT(EXTERN); }
-"float"      { CAPT(FLOAT); }
 "for"        { CAPT(FOR); }
-"goto"       { CAPT(GOTO); }
-"_Imaginary" { CAPT(IMAGINARY); }
 "imm"        { CAPT(IMM); }
-"inline"     { CAPT(INLINE); }
-"int"        { CAPT(INT); }
-"long"       { CAPT(LONG); }
-"register"   { CAPT(REGISTER); }
-"restrict"   { CAPT(RESTRICT); }
-"short"      { CAPT(SHORT); }
-"signed"     { CAPT(SIGNED); }
-"sizeof"     { CAPT(SIZEOF); }
 "src"        { CAPT(SRC); }
-"static"     { CAPT(STATIC); }
-"struct"     { CAPT(STRUCT); }
-"switch"     { CAPT(SWITCH); }
-"typedef"    { CAPT(TYPEDEF); }
-"union"      { CAPT(UNION); }
-"unsigned"   { CAPT(UNSIGNED); }
-"void"       { CAPT(VOID); }
-"volatile"   { CAPT(VOLATILE); }
-"while"      { CAPT(WHILE); }
+
 
 {UNSIGNED_CONST} { count(); GET_STR; CAPT(UN_CONST);  }
 {SIGNED_CONST}   { count(); GET_STR; CAPT(S_CONST);   }
@@ -183,22 +199,10 @@ L?'(\\.|[^\\'\n])+' { count(); return(CONSTANT); }
 
 L?\"(\\.|[^\\"\n])*\"  { count(); return(STRING_LITERAL); }
 
-"..."      { count(); return(ELLIPSIS); }
-">>="      { count(); return(RIGHT_ASSIGN); }
-"<<="      { count(); return(LEFT_ASSIGN); }
-"+="       { count(); return(ADD_ASSIGN); }
-"-="       { count(); return(SUB_ASSIGN); }
-"*="       { count(); return(MUL_ASSIGN); }
-"/="       { count(); return(DIV_ASSIGN); }
-"%="       { count(); return(MOD_ASSIGN); }
-"&="       { count(); return(AND_ASSIGN); }
-"^="       { count(); return(XOR_ASSIGN); }
-"|="       { count(); return(OR_ASSIGN); }
 ">>"       { count(); return(RIGHT_OP); }
 "<<"       { count(); return(LEFT_OP); }
 "++"       { count(); return(INC_OP); }
 "--"       { count(); return(DEC_OP); }
-"->"       { count(); return(PTR_OP); }
 "&&"       { count(); return(AND_OP); }
 "||"       { count(); return(OR_OP); }
 "<="       { count(); return(LE_OP); }

@@ -202,6 +202,16 @@ struct FslParser
     }
 
     // --------------------------------------------------------------
+    // utils
+    // --------------------------------------------------------------
+
+    //! \brief single quote helper function
+    std::string tq(std::string s) { return "'"+s+"'"; }
+
+    // --------------------------------------------------------------
+    // parser controls
+    // --------------------------------------------------------------
+
     //! \brief verbose lexer console output
     uint32_t TRACE_EN{false};
 

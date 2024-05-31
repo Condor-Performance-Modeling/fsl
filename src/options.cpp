@@ -63,10 +63,11 @@ void Options::buildOptions(po::options_description & stdOpts)
      "Multiple --input_file accepted")
 
     ("trace_en", po::bool_switch(&trace_en) ->default_value(false),
-         "Parser trace enable");
+         "Parser trace enable")
 
     ("verbose", po::bool_switch(&verbose) ->default_value(false),
-         "Verbose message control");
+         "Verbose message control")
+    ;
 }
 // clang-format on
 // --------------------------------------------------------------------
