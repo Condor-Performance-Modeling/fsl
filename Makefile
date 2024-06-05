@@ -8,7 +8,7 @@ SRC_OBJ = $(subst src,obj,$(ALL_SRC:.cpp=.o))
 
 # Bison and Flex configuration
 BISON = bison
-B_CNTR = -Wcounterexamples
+#B_CNTR = -Wcounterexamples
 BISONFLAGS = -d $(B_CNTR)
 
 FLEX = flex
@@ -29,7 +29,8 @@ INC  = -I./inc -I./obj
 LIBS = -lboost_program_options
 
 INP_FILES = -i syntax_tests/_1_syntax_test.fsl \
-            -i syntax_tests/_2_syntax_test.fsl 
+            -i syntax_tests/_2_syntax_test.fsl \
+            -i syntax_tests/sample1.fsl
 
 #INP_FILES = -i examples/dhrystone.fsl
 
@@ -68,6 +69,9 @@ $(FLEX_OUT): $(FLEX_SRC) $(BISON_H)
 #TRACE=--trace_en
 run:  $(TARGET)
 	$(TARGET) --verbose $(INP_FILES) $(OUT_FILE) $(TRACE)
+
+help-%:
+	@echo $* = $($*)
 
 # Clean build files
 clean:

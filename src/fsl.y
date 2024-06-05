@@ -1,6 +1,5 @@
 %{
 #include "fslparser.h"
-
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -10,15 +9,12 @@
 using namespace std;
 
 extern FslParser *FP;
-
 extern int column;
 extern int yylex();
 extern int yyparse();
 extern FILE *yyin;
 extern char *yytext;
 extern void yyerror(const char *s);
-//std::vector<std::string> sequence_lines;
-
 %}
 
 %union {
@@ -28,61 +24,7 @@ extern void yyerror(const char *s);
   std::string *str;
 }
 
-%token CONSTRAINTS
-%token CONVERSION
-%token EMIT
-%token ENCODE_ORDER
-%token ENCODING
-%token FAIL
-%token FUSION
-%token CSR
-%token GPR
-%token IF
-%token INPUT_SEQ
-%token INSTR
-%token IOPUT
-%token ISA
-%token MNEMONIC
-%token REPLACE
-%token REQUIREDBITS
-%token OPC
-%token SRC
-%token DST
-%token RSX
-%token RDX
-%token IMM
-%token TYPE
-%token MORPH
-%token OPT_TOKEN
-%token PASS
-%token PROLOG
-%token REQ_TOKEN
-%token RET
-%token S0 S1
-%token SEQUENCE
-%token TRANSFORM
-%token UARCH
-%token UN_CONST
-%token S_CONST
-%token STRING
-%token UID
-%token TRUE
-%token FALSE
-%token WRITEPORTS
-%token READPORTS
-
-%token QSTRING ID CONSTANT STRING_LITERAL
-%token INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
-%token AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
-%token SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
-%token XOR_ASSIGN OR_ASSIGN TYPE_NAME
-
-%token EXTERN AUTO
-
-%token ELSE FOR 
-
-%token HEX_CONST
-%token VLOG_CONST
+%token CONSTRAINTS CONVERSION EMIT ENCODE_ORDER ENCODING FAIL FUSION CSR GPR HASATTR IF INPUT_SEQ INSTR IOPUT ISA MNEMONIC REPLACE REQUIREDBITS OPC SRC DST RSX RDX IMM TYPE MORPH OPT_TOKEN PASS PROLOG REQ_TOKEN RET S0 S1 SEQUENCE TRANSFORM UARCH UN_CONST S_CONST STRING UID TRUE FALSE WRITEPORTS READPORTS SETOF QSTRING ID CONSTANT STRING_LITERAL INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN XOR_ASSIGN OR_ASSIGN TYPE_NAME EXTERN AUTO ELSE FOR HEX_CONST VLOG_CONST
 
 %nonassoc NO_ELSE
 %nonassoc ELSE
@@ -102,7 +44,6 @@ top:
 source_line:
     transform_definition
   | prolog_definition
-//  | function_definition
   | declaration
   ;
 
@@ -125,11 +66,34 @@ transform_statement:
   | selection_statement
   | constraints_definition
   | conversion_definition
+  | setof_definition
+  ;
+
+setof_definition:
+    SETOF id '='  chained_id_list '.' chained_method_list
+  ;
+
+chained_method_list:
+    chained_method_list '.' known_method_decl
+  | known_method_decl
+  ;
+
+known_method_decl:
+    known_method '(' opt_arg ')'
+  ;
+
+opt_arg:
+    /* empty */
+  | id
+  | constant
+  | '{' '}'
+  | '*'
+  | '{' concatenate_list '}'
   ;
 
 prolog_definition:
     PROLOG id '{' '}'
-  | PROLOG id '{'  prolog_statements '}'
+  | PROLOG id '{' prolog_statements '}'
   ;
 
 prolog_statements:
@@ -143,29 +107,28 @@ prolog_statement:
   | IOPUT id
   ;
 
-isa_decl:   ISA   id ;
+isa_decl: ISA id ;
 uarch_decl: UARCH id ;
 ioput_decl: IOPUT id ;
 
-//variable_definition:
-//    variable_type id '=' assignment_expression
-// |  variable_type id '=' '{' concatenate_list '}'
+variable_definition:
+    type_specifier id '=' assignment_expression
+  | type_specifier id '=' '{' concatenate_list '}'
   ;
-
-//variable_definition:
-//    type_specifier id '=' assignment_expression
-//    type_specifier id '=' '{' concatenate_list '}'
-//  ;
 
 variable_decl:
     type_specifier arg_expr_list
-//  | variable_definition
+  | variable_definition
   ;
 
 constraints_definition:
-    CONSTRAINTS id                       '{' constraints_statements '}'
-  | CONSTRAINTS id '(' arg_expr_list ')' '{'                        '}'
+    CONSTRAINTS opt_id '{' constraints_statements '}'
   | CONSTRAINTS id '(' arg_expr_list ')' '{' constraints_statements '}'
+  ;
+
+opt_id:
+    /* empty */
+  | id
   ;
 
 constraints_statements:
@@ -173,15 +136,13 @@ constraints_statements:
   | constraints_statements constraints_statement
   ;
 
-
 constraints_statement:
     pass_fail_statement
   | chained_id_list comparison_operator chained_id_list
   | chained_id_list comparison_operator constant
   | chained_id_list comparison_operator chained_id_list LEFT_OP constant
-  | chained_id_list '.' known_method '(' ')' comparison_operator
-    chained_id_list '.' known_method '(' ')'
-  | chained_id_list '.' known_method '(' id ')' comparison_operator constant
+  | chained_id_list '.' known_method_decl comparison_operator chained_id_list '.' known_method_decl
+  | chained_id_list '.' known_method_decl comparison_operator constant
   | selection_statement
   ;
 
@@ -193,9 +154,7 @@ comparison_operator:
   ;
 
 conversion_definition:
-    CONVERSION                          '{' conversion_statements '}'
-  | CONVERSION id                       '{' conversion_statements '}'
-  | CONVERSION id '(' arg_expr_list ')' '{'                        '}'
+    CONVERSION opt_id '{' conversion_statements '}'
   | CONVERSION id '(' arg_expr_list ')' '{' conversion_statements '}'
   ;
 
@@ -211,10 +170,7 @@ conversion_statement:
   | encoding_definition
   | instr_decl
   | instr_definition
-  | chained_id_list '.' known_method '(' id       ')'
-  | chained_id_list '.' known_method '(' constant ')'
-  | chained_id_list '.' known_method '(' '*'      ')'
-  | chained_id_list '.' known_method '(' '{' concatenate_list '}' ')'
+  | chained_id_list '.' known_method_decl
   | chained_id_list '.' REPLACE '(' comma_sep_list ')'
   ;
 
@@ -225,10 +181,15 @@ concatenate_list:
 
 concatenate_elem:
     id
-  | select_elem
+  | id range_list opt_dot_id
   | OPC
   | constant
   | known_method '=' constant
+  ;
+
+opt_dot_id:
+    /* empty */
+  | '.' id
   ;
 
 comma_sep_list:
@@ -236,8 +197,11 @@ comma_sep_list:
   | comma_sep_list ',' id
   ;
 
-select_elem:
-    id '[' constant ']'
+range_list:
+    '[' constant ']'
+  | '[' constant ':' constant ']'
+  | range_list '[' constant ']'
+  | range_list '[' constant ':' constant ']'
   ;
 
 chained_id_list:
@@ -258,18 +222,18 @@ known_method:
   | RSX
   | IMM
   | TYPE
+  | HASATTR
   | MORPH
   ;
 
-instr_decl:
-    INSTR id
-  ;
+instr_decl: INSTR id ;
 
 instr_definition:
-    INSTR id '(' arg_assignment_list      ')'
+    INSTR id '(' arg_assignment_list ')'
   | INSTR id '(' '{' concatenate_list '}' ')'
-  | INSTR id '(' '{' encode_list      '}' ')'
-  | INSTR id '(' known_method '(' id ')'      ')'
+  | INSTR id '(' '{' encode_list '}' ')'
+  | INSTR id '(' chained_id_list '.' known_method '(' id ')' ')'
+  | INSTR id '(' known_method '(' id ')' ')'
   ;
 
 encode_list:
@@ -281,12 +245,11 @@ encode_elem:
     id '[' constant ']' '.' ENCODING
   ;
 
-encoding_decl:
-    ENCODING id
-  ;
+encoding_decl: ENCODING id ;
 
 encoding_definition:
     ENCODING id '(' arg_assignment_list ')'
+  | ENCODING id '(' '{' concatenate_list '}' ')'
   ;
 
 arg_assignment_list:
@@ -297,463 +260,268 @@ arg_assignment_list:
 arg_assignment:
     known_method '=' constant
   | known_method '=' '{' arg_expr_list '}'
-  | id           '=' '{' arg_expr_list '}'
+  | id '=' '{' arg_expr_list '}'
   ;
-
 
 pass_fail_statement:
     PASS
   | FAIL
   ;
 
-primary_expression
-	: id
-	| constant
-	| STRING_LITERAL
-	| '(' expression ')'
-	;
+primary_expression:
+    id
+  | constant
+  | STRING_LITERAL
+  | '(' expression ')'
+  ;
 
-postfix_expression
-	: primary_expression
-	| postfix_expression '[' expression ']'
-	| postfix_expression '(' ')'
-	| postfix_expression '(' arg_expr_list ')'
-	| postfix_expression '.' id
-	| postfix_expression INC_OP
-	| postfix_expression DEC_OP
-	| postfix_expression '.' ENCODING '(' ')'
-//	| '(' type_name ')' '{' initializer_list '}'
-//	| '(' type_name ')' '{' initializer_list ',' '}'
-	;
+postfix_expression:
+    primary_expression
+  | postfix_expression '[' expression ']'
+  | postfix_expression '(' opt_arg_expr_list ')'
+  | postfix_expression '.' id
+  | postfix_expression INC_OP
+  | postfix_expression DEC_OP
+  | postfix_expression '.' ENCODING '(' ')'
+  ;
+
+opt_arg_expr_list:
+    /* empty */
+  | arg_expr_list
+  ;
 
 arg_expr_list:
     assignment_expression
-	| arg_expr_list ',' assignment_expression
-	;
+  | arg_expr_list ',' assignment_expression
+  ;
 
+unary_expression:
+    postfix_expression
+  | INC_OP unary_expression
+  | DEC_OP unary_expression
+  | unary_operator cast_expression
+  ;
 
-unary_expression
-	: postfix_expression
-	| INC_OP unary_expression
-	| DEC_OP unary_expression
-	| unary_operator cast_expression
-//	| SIZEOF unary_expression
-//	| SIZEOF '(' type_name ')'
-	;
+unary_operator:
+    '&'
+  | '*'
+  | '+'
+  | '-'
+  | '~'
+  | '!'
+  ;
 
-unary_operator
-	: '&'
-	| '*'
-	| '+'
-	| '-'
-	| '~'
-	| '!'
-	;
+cast_expression:
+    unary_expression
+  | '(' type_name ')' cast_expression
+  ;
 
-cast_expression
-	: unary_expression
-	| '(' type_name ')' cast_expression
-	;
+multiplicative_expression:
+    cast_expression
+  | multiplicative_expression '*' cast_expression
+  | multiplicative_expression '/' cast_expression
+  | multiplicative_expression '%' cast_expression
+  ;
 
-multiplicative_expression
-	: cast_expression
-	| multiplicative_expression '*' cast_expression
-	| multiplicative_expression '/' cast_expression
-	| multiplicative_expression '%' cast_expression
-	;
+additive_expression:
+    multiplicative_expression
+  | additive_expression '+' multiplicative_expression
+  | additive_expression '-' multiplicative_expression
+  ;
 
-additive_expression
-	: multiplicative_expression
-	| additive_expression '+' multiplicative_expression
-	| additive_expression '-' multiplicative_expression
-	;
+shift_expression:
+    additive_expression
+  | shift_expression LEFT_OP additive_expression
+  | shift_expression RIGHT_OP additive_expression
+  ;
 
-shift_expression
-	: additive_expression
-	| shift_expression LEFT_OP additive_expression
-	| shift_expression RIGHT_OP additive_expression
-	;
+relational_expression:
+    shift_expression
+  | relational_expression '<' shift_expression
+  | relational_expression '>' shift_expression
+  | relational_expression LE_OP shift_expression
+  | relational_expression GE_OP shift_expression
+  ;
 
-relational_expression
-	: shift_expression
-	| relational_expression '<' shift_expression
-	| relational_expression '>' shift_expression
-	| relational_expression LE_OP shift_expression
-	| relational_expression GE_OP shift_expression
-	;
+equality_expression:
+    relational_expression
+  | equality_expression EQ_OP relational_expression
+  | equality_expression NE_OP relational_expression
+  ;
 
-equality_expression
-	: relational_expression
-	| equality_expression EQ_OP relational_expression
-	| equality_expression NE_OP relational_expression
-	;
+and_expression:
+    equality_expression
+  | and_expression '&' equality_expression
+  ;
 
-and_expression
-	: equality_expression
-	| and_expression '&' equality_expression
-	;
+exclusive_or_expression:
+    and_expression
+  | exclusive_or_expression '^' and_expression
+  ;
 
-exclusive_or_expression
-	: and_expression
-	| exclusive_or_expression '^' and_expression
-	;
+inclusive_or_expression:
+    exclusive_or_expression
+  | inclusive_or_expression '|' exclusive_or_expression
+  ;
 
-inclusive_or_expression
-	: exclusive_or_expression
-	| inclusive_or_expression '|' exclusive_or_expression
-	;
+logical_and_expression:
+    inclusive_or_expression
+  | logical_and_expression AND_OP inclusive_or_expression
+  ;
 
-logical_and_expression
-	: inclusive_or_expression
-	| logical_and_expression AND_OP inclusive_or_expression
-	;
+logical_or_expression:
+    logical_and_expression
+  | logical_or_expression OR_OP logical_and_expression
+  ;
 
-logical_or_expression
-	: logical_and_expression
-	| logical_or_expression OR_OP logical_and_expression
-	;
+conditional_expression:
+    logical_or_expression
+  | logical_or_expression '?' expression ':' conditional_expression
+  ;
 
-conditional_expression
-	: logical_or_expression
-	| logical_or_expression '?' expression ':' conditional_expression
-	;
-
-assignment_expression
-	: conditional_expression
-	| unary_expression assignment_operator assignment_expression
-	;
+assignment_expression:
+    conditional_expression
+  | unary_expression assignment_operator assignment_expression
+  ;
 
 expression:
     assignment_expression
-	| expression ',' assignment_expression
-	;
+  | expression ',' assignment_expression
+  ;
 
-//constant_expression:
-//    conditional_expression
-//	;
+assignment_operator:
+    '='
+  ;
 
-assignment_operator
-	: '='
-//	| MUL_ASSIGN
-//	| DIV_ASSIGN
-//	| MOD_ASSIGN
-//	| ADD_ASSIGN
-//	| SUB_ASSIGN
-//	| LEFT_ASSIGN
-//	| RIGHT_ASSIGN
-//	| AND_ASSIGN
-//	| XOR_ASSIGN
-//	| OR_ASSIGN
-	;
-
-declaration
-	: declaration_specifiers ';'
-	| declaration_specifiers init_declarator_list ';'
-	;
+declaration:
+    declaration_specifiers ';'
+  | declaration_specifiers init_declarator_list ';'
+  ;
 
 declaration_specifiers:
     storage_class_specifier
-	| storage_class_specifier declaration_specifiers
-	| type_specifier
-	| type_specifier declaration_specifiers
-//	| type_qualifier
-//	| type_qualifier declaration_specifiers
-//	| function_specifier
-//	| function_specifier declaration_specifiers
-	;
+  | storage_class_specifier declaration_specifiers
+  | type_specifier
+  | type_specifier declaration_specifiers
+  ;
 
-init_declarator_list
-	: init_declarator
-	| init_declarator_list ',' init_declarator
-	;
+init_declarator_list:
+    init_declarator
+  | init_declarator_list ',' init_declarator
+  ;
 
-init_declarator
-	: declarator
-	| declarator '=' initializer
-	;
+init_declarator:
+    declarator
+  | declarator '=' initializer
+  ;
 
 storage_class_specifier:
-//	  TYPEDEF
-	  EXTERN
-//	| STATIC
-	| AUTO
-//	| REGISTER
-	;
+    EXTERN
+  | AUTO
+  ;
 
 type_specifier:
-//    VOID
     GPR
   | CSR
   | UN_CONST
   | S_CONST
-	| STRING
-//	| CHAR
-//	| SHORT
-//	| INT
-//	| LONG
-//	| FLOAT
-//	| DOUBLE
-//	| SIGNED
-//	| UNSIGNED
-//	| COMPLEX
-//	| IMAGINARY
-//	| struct_or_union_specifier
-//	| enum_specifier
-//	| TYPE_NAME
-	;
-
-//struct_or_union_specifier
-//	: struct_or_union id '{' struct_declaration_list '}'
-//	| struct_or_union '{' struct_declaration_list '}'
-//	| struct_or_union id
-//	;
-
-//struct_or_union
-//	: STRUCT
-//	| UNION
-//	;
-
-//struct_declaration_list
-//	: struct_declaration
-//	| struct_declaration_list struct_declaration
-//	;
-
-//struct_declaration
-//	: specifier_qualifier_list struct_declarator_list ';'
-	;
-
-specifier_qualifier_list
-	: type_specifier specifier_qualifier_list
-	| type_specifier
-//	| type_qualifier specifier_qualifier_list
-//	| type_qualifier
-	;
-
-//struct_declarator_list
-//	: struct_declarator
-//	| struct_declarator_list ',' struct_declarator
-//	;
-
-//struct_declarator
-//	: declarator
-//	| ':' constant_expression
-//	| declarator ':' constant_expression
-//	;
-
-//enum_specifier
-//	: ENUM    '{' enumerator_list     '}'
-//	| ENUM id '{' enumerator_list     '}'
-//	| ENUM    '{' enumerator_list ',' '}'
-//	| ENUM id '{' enumerator_list ',' '}'
-//	| ENUM id
-//	;
-
-//enumerator_list
-//	: enumerator
-//	| enumerator_list ',' enumerator
-//	;
-//
-//enumerator
-//	: id
-////	| id '=' constant_expression
-//	;
-//
-//type_qualifier
-//	: CONST
-//	| RESTRICT
-//	| VOLATILE
-//	;
-
-//function_specifier
-//	: INLINE
-//	;
+  | STRING
+  ;
 
 declarator:
-//	: pointer direct_declarator
-	  direct_declarator
-	;
+    direct_declarator
+  ;
 
-direct_declarator
-	: id
-	| '(' declarator ')'
-//	| direct_declarator '[' type_qualifier_list assignment_expression ']'
-//	| direct_declarator '[' type_qualifier_list ']'
-//	| direct_declarator '[' assignment_expression ']'
-//	| direct_declarator '[' STATIC type_qualifier_list assignment_expression ']'
-//	| direct_declarator '[' type_qualifier_list STATIC assignment_expression ']'
-//	| direct_declarator '[' type_qualifier_list '*' ']'
-	| direct_declarator '[' '*' ']'
-	| direct_declarator '[' constant ']'
-	| direct_declarator '[' constant ':' constant ']'
-	| direct_declarator '[' ']'
-	| direct_declarator '(' parameter_list ')'
-	| direct_declarator '(' identifier_list ')'
-	| direct_declarator '(' ')'
-	;
+direct_declarator:
+    id
+  | '(' declarator ')'
+  | direct_declarator '[' '*' ']'
+  | direct_declarator '[' constant ']'
+  | direct_declarator '[' constant ':' constant ']'
+  | direct_declarator '[' ']'
+  | direct_declarator '(' parameter_list ')'
+  | direct_declarator '(' identifier_list ')'
+  | direct_declarator '(' ')'
+  ;
 
-//pointer
-//	: '*'
-////	| '*' type_qualifier_list
-//	| '*' pointer
-////	| '*' type_qualifier_list pointer
-//	;
+parameter_list:
+    parameter_declaration
+  | parameter_list ',' parameter_declaration
+  ;
 
-//type_qualifier_list
-//	: type_qualifier
-//	| type_qualifier_list type_qualifier
-//	;
+parameter_declaration:
+    declaration_specifiers declarator
+  | declaration_specifiers
+  ;
 
+identifier_list:
+    id
+  | identifier_list ',' id
+  ;
 
-//parameter_type_list
-//	: parameter_list
-////	| parameter_list ',' ELLIPSIS
-//	;
+type_name:
+    specifier_qualifier_list
+  ;
 
-parameter_list
-	: parameter_declaration
-	| parameter_list ',' parameter_declaration
-	;
-
-parameter_declaration
-	: declaration_specifiers declarator
-//	| declaration_specifiers abstract_declarator
-	| declaration_specifiers
-	;
-
-identifier_list
-	: id
-	| identifier_list ',' id
-	;
-
-type_name
-	: specifier_qualifier_list
-//	| specifier_qualifier_list abstract_declarator
-	;
-
-//abstract_declarator:
-////	: pointer
-//	  direct_abstract_declarator
-////	| pointer direct_abstract_declarator
-//	;
-
-//direct_abstract_declarator:
-////	: '(' abstract_declarator ')'
-//	  '[' ']'
-//	| '[' assignment_expression ']'
-//	| direct_abstract_declarator '[' ']'
-//	| direct_abstract_declarator '[' assignment_expression ']'
-//	| '[' '*' ']'
-//	| direct_abstract_declarator '[' '*' ']'
-//	| '(' ')'
-//	| '(' parameter_list ')'
-//	| direct_abstract_declarator '(' ')'
-//	| direct_abstract_declarator '(' parameter_list ')'
-//	;
+specifier_qualifier_list:
+    type_specifier
+  | type_specifier specifier_qualifier_list
+  ;
 
 initializer:
-	  assignment_expression
-	| '{' initializer_list '}'
-	| '{' initializer_list ',' '}'
-	;
+    assignment_expression
+  | '{' initializer_list '}'
+  | '{' initializer_list ',' '}'
+  ;
 
-initializer_list
-	: initializer
-	| designation initializer
-	| initializer_list ',' initializer
-	| initializer_list ',' designation initializer
-	;
-
-designation
-	: designator_list '='
-	;
-
-designator_list
-	: designator
-	| designator_list designator
-	;
-
-designator
-	: '[' expression ']'
-	| '.' id
-	;
+initializer_list:
+    initializer
+  | initializer_list ',' initializer
+  ;
 
 statement:
-//    labeled_statement
-	  pass_fail_statement
-	| compound_statement
-	| expression_statement
-	| selection_statement
-	| iteration_statement
-//	| jump_statement
-	;
+    pass_fail_statement
+  | compound_statement
+  | expression_statement
+  | selection_statement
+  | iteration_statement
+  ;
 
-//labeled_statement
-//	: id ':' statement
-//	| CASE constant_expression ':' statement
-//	| DEFAULT ':' statement
-//	;
+compound_statement:
+    '{' '}'
+  | '{' block_item_list '}'
+  ;
 
-compound_statement
-	: '{' '}'
-	| '{' block_item_list '}'
-	;
+block_item_list:
+    block_item
+  | block_item_list block_item
+  ;
 
-block_item_list
-	: block_item
-	| block_item_list block_item
-	;
+block_item:
+    declaration
+  | statement
+  ;
 
-block_item
-	: declaration
-	| statement
-	;
-
-expression_statement
-	: ';'
-	| expression ';'
-	;
+expression_statement:
+    ';'
+  | expression ';'
+  ;
 
 selection_statement:
     IF '(' expression ')' statement %prec NO_ELSE
-	| IF '(' expression ')' statement ELSE statement
-//	| SWITCH '(' expression ')' statement
-	;
+  | IF '(' expression ')' statement ELSE statement
+  ;
 
 iteration_statement:
-//	: WHILE '(' expression ')' statement
-//	| DO statement WHILE '(' expression ')' ';'
-	  FOR '(' expression_statement expression_statement ')' statement
+    FOR '(' expression_statement expression_statement ')' statement
   | FOR '(' expression_statement expression_statement expression ')' statement
-	| FOR '(' declaration expression_statement ')' statement
-	| FOR '(' declaration expression_statement expression ')' statement
-	;
-
-//jump_statement
-//	: GOTO id ';'
-//	| CONTINUE ';'
-//	| BREAK ';'
-//	| RETURN ';'
-//	| RETURN expression ';'
-//	;
-
-//function_definition
-//	: declaration_specifiers declarator declaration_list compound_statement
-//	| declaration_specifiers declarator compound_statement
-//	;
-
-//declaration_list
-//	: declaration
-//	| declaration_list declaration
-//	;
+  | FOR '(' declaration expression_statement ')' statement
+  | FOR '(' declaration expression_statement expression ')' statement
+  ;
 
 id:
     ID
   ;
-
-//bit_range:
-//    ID '[' constant  ']'
-//  | ID '[' constant  ':' constant ']'
-//  ;
 
 constant:
     CONSTANT
@@ -762,3 +530,5 @@ constant:
   | QSTRING
   ;
 %%
+
+

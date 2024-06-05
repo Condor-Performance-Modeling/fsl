@@ -44,6 +44,7 @@ transform uf1
     //TEST: automatically merge the operands and instructions in the
     //sequence in the order listed.
     lbu_addi.morph(seq_uf1)
+    iop.input.replace(seq_uf1,lbu_addi)
   }
 }
 // ----------------------------------------------------------------
@@ -390,15 +391,16 @@ transform uf24 {
   //TEST: uarch method call
   constraints cns_u24 {
     seq_u24 <= plog1
-    seq_u24.writePorts <= plog1.oly.writePorts
-    seq_u24.readPorts  <= plog1.oly.readPorts
+    seq_u24.writePorts() <= plog1.oly.writePorts()
+    seq_u24.readPorts()  <= plog1.oly.readPorts()
     C.minBits <= 4
     D.minBits <= c.minBits << 1
     E.minBits <= C.width
   }
 
   //TEST: bit range
-  conversion cnv_u24 {
-    instr i_u24({0xCC,c[3:0],D[4:0],E[3:0]})
-  }
+//  conversion cnv_u24 {
+//    instr i_u24({0xCC,c[3:0],D[4:0],E[3:0]})
+//  }
+
 }

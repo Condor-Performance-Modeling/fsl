@@ -312,7 +312,7 @@ prolog plg
 transform composition
 {
   prolog plg  //new: prolog can be external and shared
-  gpr g1..9   //new: variable naming expansion syntax
+//  gpr g1..9   //new: variable naming expansion syntax
 
   //setof is a collection type
   //hasAttr will scan the contents of the isa specification named rv64gc

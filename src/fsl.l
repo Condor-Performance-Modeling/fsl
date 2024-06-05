@@ -130,6 +130,7 @@ encoding     { CAPT(ENCODING);     }
 false        { CAPT(FALSE);        }
 fusion       { CAPT(FUSION);       }
 gpr          { CAPT(GPR);          }
+hasAttr      { CAPT(HASATTR);      }
 if           { CAPT(IF);           }
 instr        { CAPT(INSTR);        }
 ioput        { CAPT(IOPUT);        }
@@ -143,6 +144,7 @@ replace      { CAPT(REPLACE);      }
 rsx          { CAPT(RSX);          }
 s0           { CAPT(S0);           }
 s1           { CAPT(S1);           }
+setof        { CAPT(SETOF);        }
 string       { CAPT(STRING);       }
 transform    { CAPT(TRANSFORM);    }
 true         { CAPT(TRUE);         }
