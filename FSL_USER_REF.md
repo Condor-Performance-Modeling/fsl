@@ -272,6 +272,7 @@ String literal syntax is conventional using double quotes.
 ----------------------------------------------------------------
 ## FSL Native Types
 
+### Signed/unsigned numberic types
 The native integer type equivalents in FSL are signed and unsigned with an explicit width specified in the type name.
 
 ```
@@ -286,6 +287,7 @@ For math operations on these types the internal representation is uint64_t by de
 
 Assigning a value that will overflow the range of a variable will generate a warning or throw an Fsl::Exception, depending on the configuration of the FSL interpreter. See <FIXME: FSL API USER REF> for interpreter controls. The default is to throw an exception.
 
+### GPR/CSR types
 In addition to the FSL integer types the language supports the gpr (General Purpose Register) and csr (Control/Status Register) types. Use of these types is unique to FSL. The contents of gpr or csr variable is the index of the respective register rather then a general value.
 ```
 gpr g1 = 2    // This specifies X2 in the RISC-V domain
@@ -301,7 +303,60 @@ gpr g2 = g1[1]  // syntax error, range is not valie for gpr/csr
 gpr g2 = ~g1    // syntax error, boolean ops are not valid for gpr/csr
 ```
 
-----------------------------------------------------------------
+### instr type
+The instr type declares an abstraction instruction object. These objects are the targets for transformations. 
+
+The instr type has associated methods for assigning attributes.
+
+```
+.morph(<sequence>)     // morphing performs the final transformation
+                       // .morph() is a functor in the FSL API. with 
+                       // a default implementation which can be overloaded
+.mnemonic(name)        // modify the default mnemonic with name
+                       // the default mnemonic is the name of the instr object
+.dst({dst list})       // assign the destination fields from a list
+.src({src list})       // assign the source fields from a list, the list can 
+                       // include numeric literals
+.type(type name)       // assign a type name, this arbitrary and user defined
+                       // the FSL interpreter provides syntax, the FSL API
+                       // populates the data member. See also the setof type.
+.encoding(<encoding type>)  // explicitly set the encoding for the transformed instr 
+                            // object.
+```
+### setof type
+The setof type is a generic collection type which holds lists of objects that have been gathered through attribute comparison. 
+
+The example below scans the isa object rv64gc for the attributes rtype and logical. 
+
+```
+isa rv64gc 
+setof r_bools = rv64gc.hasAttr(rtype).hasAttr(logical)
+``` 
+In this example the ISA definition API object method .hasAttr() is called with two attributes specified. The FSL interpreter will call the hasAttr methods in right to left order. A list is formed of all ISA objects known to rv64gc with attribute logical. This list is further filtered for all objects that have the rtype attribute. 
+
+The attributes rtype and logical are meaningful to the ISA definition object. The FSL API does not need to comprehend the meaning of rtype or logical. The FSL API calls the ISA definition object's hasAttr() method and places the final objects into the destination, in this case r_bool. 
+
+### encoding type
+encoding is used when explicit definition is required for transformed instr objects. The encoding object has two methods, .opc() and .encode_order() method. Either of these methods are optional. 
+
+Example usage below. Not shown is the surrounding syntax. 
+
+```
+  ...
+  gpr g1
+  s12 c1
+  u6  c2
+  ...
+  instr myInstr
+  encoding myEnc
+  myEnc.opc(0xFFFF)
+  myEnc.encode_order({opc,g1,c2,c1})
+  myInstr.encoding(myEnc)
+  ...
+```
+When declaring an encoding variable and assigning it to a instr object, if the opc or encode_order fields are NULL the FSL API will treat the instr object as an abstract instruction.
+
+
 ## Operators
 
 The list of operators and their support in FSL is listed below. FSL adds
@@ -444,6 +499,8 @@ The transform statement is a top level structure.  Each transform statement is n
 
 The generic form is shown below. The order of the sections and clauses is arbitrary. What is shown is the recommended convention.
 
+The conceptual template for a transform specification is shown:
+
 ```
 transform <name> {
   <prolog section>
@@ -467,18 +524,20 @@ The prolog elements provide the necessary context for the transform operation an
   ioput  iop1
 ```
 
-During parsing the FSL interpreter uses the prolog elements to determine the pertinence of a given registered transform to the current context. Transform specifications which do not match the current context are ignored.
+During parsing the FSL interpreter uses the isa and uarch prolog elements to determine the pertinence of a given registered transform to the current context. Transform specifications which do not match the current context are ignored.
 
-The FSL API contains methods used to specify the current context to the interpreter. This is discussed in the FSL API
+The FSL API contains methods used to specify the current context to the FSL interpreter. This is discussed in the <FIXME: FSL API USER REFERENCE>
 
-It is common to group the prolog elements into a top level structure and reference that structure by name in transform specifications. This is an abbreviated example:
+It is common to have many transforms for a given combination of ISA, micro-architectures and model interface.  Syntax is provided to reduce redunant specification of isa, uarch and ioput. 
+
+The prolog structure supports this improvment. Usage is shown below:
 
 ```
 prolog plog1
 {
-    isa myIsa
+    isa   myIsa
     uarch myImplementation
-    ioput iop1
+    ioput myIO
 }
 
 transform prolog_example
@@ -490,13 +549,11 @@ transform prolog_example
 
 ## isa Element
 
-The isa element name is used by the FSL API to match an instruction set description API to the transform specification. The API looks up the  'myIsa' string to find the associated object pointer.
+The ISA description interface is declared with the FSL isa element. 
 
-The FSL API will throw an exception if the named isa element does not have an associated object.
+The ISA description interface is used by the FSL API to validate instruction references in the sequence clause of the transform specification. The API matches the isa element name with a reference registered with API. e.g. the API looks up the 'myIsa' string to find the associated object pointer. The FSL API will throw an exception if the named isa element does not have an associated object.
 
-The ISA description API is used to validate instruction references in the transform specification.
-
-Mavis is the instruction set description API supported in this release.
+Mavis is the instruction set description API provided in this release. Porting to other ISA interfaces is discussed in <FIXME: FSL API USER REFERENCE>.
 
 ### isa Methods
 
@@ -504,15 +561,13 @@ The isa object has no internal methods accessible through FSL syntax. Operations
 
 ## uarch Element
 
-The uarch element name is used by the FSL API to match a micro-architecture description class instance to the transform specification.
+The microarchitecture description interface is declared with the FSL uarch element.
 
-```
-uarch myArch
-```
+The microarchitecture description interface is used by the FSL API to validate implementation limits in the contraints clause of a transform specification. 
 
-The FSL API will throw an exception if the named uarch element, myArch as shown, does not have an associated object.
+In the same way the FSL API matches ISA descriptions, the FSL API performs a name look up for the uarch element name against a registered microarchitecture description object. Similarly unmatched references cause an exception to be thrown.
 
-The microarchitecture description class is used to validate processor implementation queries made in the constraints and conversion clauses.
+The microarchitecture description is expressed in the MachineInfo.hpp/cpp of the FSL API. Porting to other machines is discussed in the <FIXME: FSL API USER REFERENCE>.
 
 ### uarch methods
 
@@ -523,7 +578,7 @@ The default uarch methods can be extended using template semantics. Extending th
 
 This is discussed in the <FIXME: FSL API USER REFERENCE>
 
-The syntax shown below is the FSL domain specific syntax for the default methods. 
+The syntax shown below is the syntax used in the constraints clause to access the  microarchitecture methods. The methods below are the default methods provided by the base MachineInfo.hpp FSL API class.
 
 ```
 .maxIntWrPorts()  // returns the maximum available write ports as
@@ -550,13 +605,13 @@ if (cam.maxIntWrPorts() < 4)
 
 ## ioput Element
 
-The FSL API links references to C++ buffers containing instruction representations to the FSL parser. This linkage is done through a similar name matching scheme as the other prolog elements.
+The FSL API links references to C++ buffers containing instruction representations to the FSL interpreter. This linkage is done through a name matching scheme as the other prolog elements.
 
 ioput is the keyword. Within ioput are two objects representing two instruction buffers, by name they are simply .input and .output.
 
-During construction the FSL API maps ioput.input and ioput.output to the appropriate model containers. 'input' and 'output' are indexes into a map containing references to the model's instruction buffers.
+During construction the FSL API maps ioput.input and ioput.output to the appropriate performance model containers. 'input' and 'output' are indexes into a map containing references to the model's instruction buffers.
 
-The FSL API will throw an exception if it can not match the elements in ioput to STL container objects.  Using Olympia as an example, the Fusion  API will attempt to match the specified name, ioput.input, to a  Fusion::InstQueue reference.
+The FSL API will throw an exception if it can not match the elements in ioput to iterable container objects.  Using Olympia as an example, the FSL API will attempt to match the specified name, ioput.input, to a Fusion::InstQueue reference.
 
 Note: The FSL syntax implies a copy-on-write idiom. However by mapping the ioput.input and ioput.output objects to the same buffer a modification in-place idiom can be implemented. This isolates the style used in the conversion clause from these external mechanics.
 
@@ -578,75 +633,88 @@ ioput elements have these methods available.
 
 ## Sequence clause
 
-The sequence clause is used to match the incoming instructions to the current transform. 
+The sequence clause is used to match the incoming instructions found in ioput.input to the current transform.
 
-The optional arguments to the sequence clause are the input sequence name and the ISA definition API facade name, declared using ioput and isa, respectively. When the arguments are unspecified the interpreter will attempt to find unambigous references to an ioput and isa object within the scope of the transform. If either reference fails to resolve the interpreter will issue an exception.
+A sequence clause is declared with the sequence keyword and optional name and arguments.
+
+The declaration styles can be either of:
+
+```
+  sequence {                  //minimal form
+    <sequence statements>
+  }
+
+  sequence seq1(iop,myIsa) {  //argument form
+    <sequence statements>
+  }
+```
+
+Either style is valid.  When the arguments are unspecified, as in the minimal form, the interpreter will attempt to find unambigous references to an ioput and isa object within the scope of the transform. If either reference fails to resolve the interpreter will issue an exception.
 
 Naming the sequence is optional when using sequence clause arguments are implicit. A sequence clause name is required when explicit arguments are used.
 
 ```
-  sequence {     // Valid
-    ...
-  }
-
-  sequence seq1(iop,myIsa) {  // Valid
-    ...
-  }
-
-  sequence (iop,myIsa) { // Invalid. The clause name must be provided when explicit
-     ...                 // arguments are also specified.
+  sequence (iop,myIsa) {     // Invalid. The clause name must be provided when 
+     <sequence statements>   // explicit arguments are also specified.
   }
 ```
 
-The ioput and isa objects used by the sequence clause to access the instruction containers and known instruction definitions. This access is used for validation of the sequence and for matching.
-
-The sequence clause implicitly uses the 1st element of ioput, the input container. The sequence clause does not modify the ioput containers.
+The ioput and isa objects are used by the sequence clause to access the instruction containers and known instruction definitions. This access is used for validation of the sequence and for matching.
 
 ```
-ioput iop1
+ioput myIop
 isa myISA
 
-sequence seq1(iop1,myISA) {
-   # sequence of instructions
+sequence seq1(myIop,myISA) {
+  <sequence statements>
 }
 ```
 
-The FSL parser uses the FSL API and access to the isa object to validate the instruction sequence. An exception is thrown if a problem is detected, for example if the FSL API is unable to determine the intended syntax from the abstract instruction in the sequence. 
+The FSL parser uses the FSL API and access to the isa object to validate the instruction sequence. An exception is thrown if a problem is detected, for example if the FSL API is unable to determine the intended syntax from the abstract instruction in the sequence it will throw an exception.
 
-The specified sequence of instructions is pattern matched against the contents of the input container.  If a match is detected the sequence object, in this case seq1, will update its internal index field and length field. This information is passed to the constraints clause. On a match the sequence clause returns \_pass\_ to the FSL API.
+The specified sequence of instructions is pattern matched against the contents of the ioput container.  If a match is detected, the sequence object seq1, will update its internal index field and length field. This information is passed to the constraints clause. On a match the sequence clause returns \_pass\_ to the FSL API.
 
-The index field is the zero-referenced position of the start of the match  within ioput. The length is the number of instructions, inclusive of the starting instruction.
+The index field is the zero-referenced position of the start of the match within ioput. The length is the number of instructions, inclusive of the starting and ending instruction.
 
-An instruction sequence is expressed as a simple list of Mavis-assigned unique identifiers, or as a set of assembly language instructions with abstracted operands. The choice is based on the constraints.
+An instruction sequence can be expressed as a simple list of ISA description interface assigned unique identifiers, or as a set of assembly language instructions with abstracted operands. The choice is based on the constraints.
 
-Abstract operands are operands specified by the FSL native types. For example an explicit three register add instruction might look like
+### Abstract operands
+An abstract operand is an FSL concept which specifies the type of an operand but not it's explicit value. Abstract operands are operands declared using FSL native types. For example an explicit three register add instruction might look like
 ```
 add  x1,x2,x3
 ```
-The abstract form matching this instruction would be as shown
+And the abstract form matching this instruction would be as shown
 ```
-gpr GA,GB,GC
-...snip...
-add GA,GB,GC
+ gpr GA,GB,GC,GD       //declare the sequence variables
+   
+sequence {
+    add GA,GB,GC       // A/B/C
+    add GA,GD,GD       // A/D/D
+    <other statements>
+}
 ```
-Three gpr type operands are declared and the abstract form of the instruction uses those declarations. Subsequent contraints clause references could then be used to restrict the values that GA, GB, GC can take meet the requirements of the transform.
+In the example the gpr type operands are declared and the abstract form of the instruction uses those declarations. Subsequently the contraints clause can reference the variables, their positions within the sequence and apply constraints on the values expected in the ioput buffer.
 
-Note simple declaration of the operand types is a form of implicit or implied constraint. For example the FSL API will not match add gpr,gpr,gpr to an instruction that requires an immediate operand.
+The sequence syntax for abstract instruction operands also provides for implicit or implied constraints. For example the FSL API will not match add gpr,gpr,gpr to an instruction that requires an immediate operand. Further the second add, A/D/D, has implicit contraints that the GD operands must be the same value, and that the destination registers, GA, in both instructions must be the same. This is an improvment on the amount of constraints clause statements that must be written.
 
-A UID list is sufficient if there are no constraints on the values of operands. If the target conversion of the transform does not require constraints on the operands and therefore has no need to refer to the operands by name and type, you can simply specify the UIDs as a list, one per line.
+Further reductions in coding effort can be obtain in the cases were there are no operand specific constraints. In these cases a sequence can be fully specified with a simple UID list.
 
-These two instructions are a frequent sequence in compiled C. The comment is the Mavis unique identifier for each instruction. The Mavis UID is independent of the operands.
+If the target conversion of the transform does not require constraints on the operands and therefore has no need to refer to the operands by name and type, you can simply specify the UIDs as a list, one per line.
+
+Shown below are two instructions in a frequent sequence from compiled C. The comment is the Mavis unique identifier (UID) for each instruction. The Mavis UID is independent of the operands.
 ```
 c.slli x10,4    // 0xf
 c.srli x10,4    // 0x13
 ```
  
+ ```
+delete me
 The UIDs are supplied by the ISA definition API. Note: sequences specified using UIDs will be specific to the ISA definition API. The UIDs listed in this documentation are Mavis assigned UIDs. There is a tradeoff between ease of specification and portability across ISA definition APIs.
+```
+These can be represented as a simple UID list.
 
 ```
-ioput iop1
-
-sequence seq1(iop1,rv64g) {
+sequence {
   0xf
   0x13
 }
@@ -655,48 +723,29 @@ With the UID sequence expression there are no operand specific constraints and t
 
 This results in a transform to a generalized fusion op of shift-left followed by shift-right.
 
-If the constraints clause implements operand restrictions, the instruction sequence should be expressed using the abstract assembly syntax which allows the operands to be referenced by name.
+If the constraints clause implements operand restrictions, the instruction sequence should be expressed using the abstract assembly syntax which allows the operands to be referenced by name. As shown in the GA/GB/GC example above.
 
-The expression below takes advantage of another implicit constraints, called positional constraints:
+### Optional instructions
+
+The example sequences above have an implied strict ordering. Another example is shown below. 
 
 ```
-ioput iop1
-
-sequence seq1(iop1,rv64g) {
-  c.slli g1,c1
-  c.srli g1,c1
+sequence {
+  add  g1, g2, g3
+  _opt_ 2
+  sub  g4, g5, g5
+  _req_ 1
+  xori g1, g1, c1
 }
 ```
 
-In this case the operands labeled g1 are, by association, required to be the same value, similarly with the constant operands.
+This is a contrived example to show the use of the sequence keywords, \_opt\_ and \_req\_. that can relax the strict ordering implied by previous examples.
 
-Another option would be to fully enumerate the operands and let the constraints clause enforce the required limits on operands.
-
-```
-ioput iop1
-
-sequence seq1(iop1,rv64g) {
-  c.slli g1,c1
-  c.srli g2,c2
-}
-```
-
-Note both the later two cases can be made equivalent by construction of the equivalent constraints in that clause.
-
-Now the transformation expresses a fusion operation for zero extention of the common rd register by the common constant.
-
-```
-g1 = g2
-c1 = c2
-```
-
-In some cases positional constraints can save development time at no expense to simulation performance.
-
-The example sequences above have an implied strict ordering. There are sequence keywords to relax the strictness of sequence matching. 
+The optional keyword, \_opt\_, indicates that the match will not be rejected if there is an instruction or not in this position. A trailing integer can be used to specify up to N optional instructions.
 
 The required keyword, \_req\_, indicates that an unspecified instruction is required in that position. The \_req\_ case does not constrain what instruction can be present in the gap. A trailing integer can specify more than one required instruction, \_req\_ 3.
 
-The optional keyword, \_opt\_, indicates that the match will not be rejected if there is an instruction or not in this position. A trailing integer can be used to specify up to N optional instructions.
+Trailing integer forms:
 
 ```
 _opt_ 2    indicates 0 - 2 instructions will match
@@ -709,28 +758,12 @@ The trailing integer is optional in the syntax:
 _opt_ and _opt_ 1 are equivalent
 _req_ and _req_ 1 are equivalent
 ```
-
-This example shows \_req\_ and \_opt\_ in a larger context:
-
-```
-ioput iop1
-
-sequence seq1(iop1,rv64g) {
-  c.lui    g1, c1
-  c.addi   g1, g1, c2
-  _req_ 2
-  c.xor    g2, g2, g1
-  c.slli   g2, g2, c3
-  _opt_ 2
-  c.srli   g2,     c3
-}
-```
-
-Notes: The sequence pragmas are also supported for the UID case.  Mixing UID  and abstract operand sequences is also supported. 
+Note: \_opt\_ and \_req\_ are also supported for the UID case.
+Note: Mixing UID and abstract operand sequences is also supported. 
 
 ### Sequence methods
 
-sequence objects have implicit data members
+sequence objects have implicit data members, they are not directly assesible in the FSL syntax.
 
 ```
 .state        This is _pass_ or _fail_ match status
@@ -740,32 +773,46 @@ sequence objects have implicit data members
  
 .index        if length is non-zero this index of the first matching
               instruction
-
 ```
 
 ## Constraints clause
 
-The constraints clause defines relationships between operands, the
-machine implementation and known transformable sequences.
+The constraints clause defines relationships between operands, the machine implementation and known transformable sequences.
 
-The sequence clause name is provided to give the constraints clause access to 
-the operand abstractions and UID list. As with the sequence clause, arguments to the constraints clause are optional. The FSL API will attempt to find unambiguous
-references for an ioput object, uarch object and a sequence object. 
+Like the other transform clauses, sequence, conversion, a constraints clause is declared with the constraints keyword and optional name and arguments.
 
-The ioput object is used so the constraints clause can query the encoding of the instructions in the input buffer. The isa object is used to validate field widths etc used in the constraints declarations. Finally the uarch object provides
-the constraints clause access to machine implementatain details.
-
-When the sequence object contains only UIDs there can be no operand
-specific constraints, and the constraints clause can simply return
-\_pass\_.
+The declaration styles can be either of:
 
 ```
-constraints cons1() {
+  constraints {                  //minimal form
+    <constraints statements>
+  }
+
+  constraints cons1(mySeq,myIoput,myIsa, myUarch) {  //argument form
+    <constraints statements>
+  }
+```
+Similar to the sequence clause, arguments to the constraints clause are optional. The FSL API will attempt to find unambiguous references for a sequence object, ioput object, uarch object and a uarch object.
+
+Similar to the sequence clause syntax rules, if the argument form is intended the constraints clause must be named. This is an illegal declaration:
+
+```
+  contraints (mySeq,myIoput,myIsa, myUarch) {  // Invalid. The clause name must
+     <contraints statements>                   // be provided when explicit
+                                               //arguments are also specified.
+  }
+```
+The sequence is used by the constraints clause to access the operand abstractions and UID list.  The ioput object is used by the constraints clause to query the instructions in the input buffer to extract operand encodings. The isa object is used to validate the field widths, etc, using in constraints declarations. Finally the uarch object provides the constraints clause access to the machine implementation details.
+
+When the sequence object contains only UIDs there can be no operand specific constraints, and the constraints clause can simply return \_pass\_.
+
+```
+constraints {
   _pass_
 }
 ```
 
-This is a contrived example unsed in the explanation that follows.
+This is a contrived example used in the explanation that follows.
 
 ```
 prolog p1
@@ -795,39 +842,17 @@ transform t1
   ...snip...
 }
 ```
-In this example a shared prolog object is declared and then references in transform t1. 
+In this example a shared prolog object is declared and then referenced in transform t1.  
 
-Variables are declared and referenced in the sequence and constraints clauses. g1 and g2 are variables of type gpr. c1 and c2 are variables of unsigned type with field with of 6 bit.  
+Variables are declared and referenced in the sequence and constraints clauses. g1 and g2 are variables of type gpr. c1 and c2 are variables of unsigned type with field width of 6 bit.  
 
-A sequence clause consisting of two instructions is for reference.
+A sequence clause consisting of two instructions is shown for reference.
 
-Using RISC-V nomenclature, the constraints clause specifies that, in order to match this transform in this contrived example, the destination register for the first (g1) and second instructions (g2) must not be the same. Further constants u6 contants c1 and c2 have a specific limitation between bit 0 of c1 and bit 1 of c2. 
-
-The explicit arguments for the sequence and constraints clauses are not used. An alternative expression of this transform could use this syntax.
-
-```
-  prolog p1
-
-  ...
-
-  sequence seq1(p1.iop1,p1.rv64g) {
-       ...
-  }  
-
-  constraints cons1(seq1,p1.iop1,p1.rv64g,p1.oly1) {
-    ...
-  }
-
-```
-This is functionally identical to the previous example but provides the explicit arguments to the the sequence and constraints clauses.
-
-The FSL syntax is designed to minimize boiler plate. 
-
-In the former case the FSL interpreter will look for unambiguous reference to an ioput object, and a isa object for the sequence clause. For the sequence clause the interpreter will perform the same look up for reference objects, the ioput object, the isa object and the uarch object.
+Using RISC-V nomenclature, the constraints clause specifies that, in order to match this transform in this contrived example, the destination register for the first (g1) and second instructions (g2) must not be the same. Further constants u6 contants c1 and c2 have a specific (contrived) limitation between bit 0 of c1 and bit 1 of c2. 
 
 ### Constraints methods
 
-The constraints clause has a single method.
+The constraints clause has a single method. This is not accessible to the FSL syntax.
 
 ```
 .state        This is _pass_ or _fail_ constraints status
@@ -837,67 +862,94 @@ In addition to the .state method, the constraints clause declarations
 are made available without prefix to the conversion clause. This is
 described in the next section.
 
-### Conversion clause
+## Conversion clause 
 
 The conversion clause performs the instruction morphing operation(s) to create
-the new instruction(s). 
+the new instruction(s). Conversion syntax supports fracture or fusion, generally any binary translation to any encoding. 
 
+Like the other transform clauses, sequence, constraints, a conversion clause is declared with the conversion keyword and optional name and arguments.
 
-The conversion clause takes a reference to the sequence clause for 
-access to the named operands or for access to the UID lists.
-
-The conversion clause takes a reference to the ioput object for
-reading the input instruction list as a destination for converted
-instructions.
-
-The constraints clause is provided to the conversion clause for 
-access to operand relationships and types.
-
-The conversion clause can modify the ioput object's input field 
-in place with converted instructions or it can place modified
-instructions in the output field of the ioput object.
-
-instr objects are used to hold the newly created instructions.  The 
-annotation fields for a new instruction are assigned to the instr
-object.
-
-In the example presume the sequence match has returned an index of 2 and a
-length of 3. In this conversion the 3 unfused instructions are replaced
-by 1 fusion created instruction.
-
-The new instruction attributes are assigned. The ioput container
-is modifed to remove the unfused instructions and insert the
-fusion replacement.
+The declaration styles can be either of:
 
 ```
-ioput iop1
+  conversion {                  //minimal form
+    <conversion statements>
+  }
 
-conversion conv1(seq1,iop1,cons1) {
-  instr newInstr
+  conversion conv1(mySeq,myIoput,myCons) {  //argument form
+    <constraints statements>
+  }
+```
+Similar to the other FSL clauses, arguments to the conversion clause are optional. The FSL API will attempt to find unambiguous references for a sequence object, ioput object, and a constraints object.
 
-  newInstr(opc=0x1234,uid=0x3)
-  newInstr(src={g1},dst={g2},imm={c1,c1})
-  newInstr(type="fused")
+Once again if the argument form is used the converion clause must be named.
 
-  iop1.input.replace(seq1,newInstr)
+The conversion clause uses the sequence object for access to the named operands or for access to the UID lists.
+
+The conversion clause uses the ioput object for reading the input instruction list as a destination for converted instructions.
+
+The conversion clause uses the constraints object for access to operand relationships and types.
+
+Continuing the previous example, a conversion clause is added, and we add explicit names and arguments to the transform clauses.
+
+```
+prolog p1
+{
+  ioput iop1
+  isa   rv64gc
+  uarch oly1
+}
+
+transform t1
+{
+  prolog p1
+
+  gpr g1,g2
+  u6  c1,c2
+
+  sequence seq_t1(p1.iop1,p1.rv64g) {
+    c.slli g1,c1
+    c.srli g2,c2
+  }
+
+  constraints cons_t1(seq_t1,p1.iop1,p1.rv64gc,p1.oly) {
+    g1 != g2
+    c1[0] == c2[1]
+  }
+
+  conversion conv_t1(seq_t1,p1.iop1,cons_t1) {
+    instr fused_shift                 // #1 declaration
+    fused_shift.mnemonic(zero_ext)    // #2 re-assign default mnemonic
+
+    fused_shift.morph(seq_t1)         // #3 enumerate the instr object from the
+                                      // sequence.
+    p1.iop.input.replace(seq_uf1,fused_shift) // #4 modify the input containiner
+  }
 }
 ```
 
-There are a large number of fields available in the instr object. Not
-all are required by all models. Inclusion of these fields is implementation
-dependent.
+This example of a conversion clause introduces a new object, instr. instr objects are generalized instructions, which can be abstract, or have explicit encodings and functions. 
+
+When declared, as in line #1, the instr object mnemonic attribute is assigned the name of the object, fused_shift. This can be modified as shown in #2. The mnemonic attribute has benefit during debug and development.
+
+Line #3 shows the syntax to create the morphed instruction.
+
+The FSL API defines a functor (function object) which performs a default morphing operation that combines the elements in the ioput corresponding to the sequence object into 1 abstract instruction. The default behavior described in the FSL API <FIXME: See FSL API USER REFERENCE>. This functor can be reassigned in the instantiation of the FSL API, and therefore does not require FSL syntax. 
+
+Line #4 replaces the instruction tuple matched by the sequence object with the morphed instruction. In this case the input buffer is modified using .replace(). Depending on needs and implementation the other methods available in the ioput object provide alternative semantics.
 
 ### Conversion methods
 
 The conversion clause has a single method.
 
 ```
-.state        This is _pass_ or _fail_ constraints status
+.state        This is _pass_ or _fail_ conversion status. _fail_ of a conversion 
+              can be ignored or tied to an exception in the FSL API.
 ```
 
-The instr type is valid within a conversion clause.
+# Example Use Cases
+TBD
 
-----------------------------------------------------------------
 # Tools and Utilities
 
 A summary of tools and utilities useful for instruction transform work. 
