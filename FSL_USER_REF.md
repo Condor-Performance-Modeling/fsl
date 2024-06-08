@@ -21,31 +21,44 @@ date: "2024-06-03"
     1. Identifiers
     1. Literals
     1. FSL Native Types
+        1. Signed/unsigned numberic
+        1. GPR/CSR
+        1. instr
+        1. setof
+        1. encoding
     1. Operators
-        1. Arithmetic Operators
-        1. Range Operators
-        1. Relational Operators
-        1. Logical Operators
-        1. Assignment Operators
-        1. Concatenation Operator
+        1. Arithmetic
+        1. Boolean 
+        1. Range
+        1. Relational
+        1. Logical
+        1. Assignment
+        1. Concatenation
     1. Comments
     1. Preprocessor Support
-        1. Conditional Compilation
+        1. Conditional Inclusion
         1. Includes
+        1. Defines
     1. Transform Structure
+        1. Transform Methods
     1. Transform Specification
     1. Prolog Elements
     1. isa Element
         1. isa Methods
     1. uarch Element
-        1. uarch methods
+        1. uarch Methods
     1. ioput Element
-        1. ioput methods
+        1. ioput Methods
     1. Sequence Clause
-        1. Sequence methods
+        1. Abstract Operands
+        1. Optional Instructions
+        1. Sequence Methods
     1. Constraints Clause
-        1. Constraints methods
+        1. Constraints Methods
     1. Conversion Clause
+        1. Conversion Methods
+
+1. Example Use Cases
 
 1. Tools and Utilities
     1. Condor FSL API
@@ -145,7 +158,6 @@ An example of an FSL transform specification written in the encapsulated style i
 
 In the sample below, the three clauses, sequence, constraints and conversion, are preceded by the variables which declare the instruction set architecture, the micro-architecture of the processor and a sequence container reference.
 
-
 ```
 transform uf10
 {
@@ -211,7 +223,6 @@ const'ness is not a feature of FSL.
 
 There is a support library called fsl, which provides utility functions. This is the only true namespace in FSL.
 
-----------------------------------------------------------------
 # Language Description
 
 This is the language specification section. Discussion of usage follows in the <FIXME: give it a name> Section.
@@ -242,7 +253,6 @@ Legal variable names are conventional.
 ^[a-zA-Z_][a-zA-Z0-9_]*$
 ```
 
-----------------------------------------------------------------
 ## Literals
 
 Numeric literals are expressed as decimal, hexadecimal or the verilog style.
@@ -269,10 +279,9 @@ String literal syntax is conventional using double quotes.
 "spill_store_merge"
 ```
 
-----------------------------------------------------------------
 ## FSL Native Types
 
-### Signed/unsigned numberic types
+### Signed/unsigned numberic
 The native integer type equivalents in FSL are signed and unsigned with an explicit width specified in the type name.
 
 ```
@@ -287,7 +296,7 @@ For math operations on these types the internal representation is uint64_t by de
 
 Assigning a value that will overflow the range of a variable will generate a warning or throw an Fsl::Exception, depending on the configuration of the FSL interpreter. See <FIXME: FSL API USER REF> for interpreter controls. The default is to throw an exception.
 
-### GPR/CSR types
+### GPR/CSR
 In addition to the FSL integer types the language supports the gpr (General Purpose Register) and csr (Control/Status Register) types. Use of these types is unique to FSL. The contents of gpr or csr variable is the index of the respective register rather then a general value.
 ```
 gpr g1 = 2    // This specifies X2 in the RISC-V domain
@@ -303,7 +312,7 @@ gpr g2 = g1[1]  // syntax error, range is not valie for gpr/csr
 gpr g2 = ~g1    // syntax error, boolean ops are not valid for gpr/csr
 ```
 
-### instr type
+### instr
 The instr type declares an abstraction instruction object. These objects are the targets for transformations. 
 
 The instr type has associated methods for assigning attributes.
@@ -323,7 +332,7 @@ The instr type has associated methods for assigning attributes.
 .encoding(<encoding type>)  // explicitly set the encoding for the transformed instr 
                             // object.
 ```
-### setof type
+### setof
 The setof type is a generic collection type which holds lists of objects that have been gathered through attribute comparison. 
 
 The example below scans the isa object rv64gc for the attributes rtype and logical. 
@@ -336,7 +345,7 @@ In this example the ISA definition API object method .hasAttr() is called with t
 
 The attributes rtype and logical are meaningful to the ISA definition object. The FSL API does not need to comprehend the meaning of rtype or logical. The FSL API calls the ISA definition object's hasAttr() method and places the final objects into the destination, in this case r_bool. 
 
-### encoding type
+### encoding
 encoding is used when explicit definition is required for transformed instr objects. The encoding object has two methods, .opc() and .encode_order() method. Either of these methods are optional. 
 
 Example usage below. Not shown is the surrounding syntax. 
@@ -367,14 +376,14 @@ These operators are unnecessary in FSL:
 
 Within the supported operators FSL uses conventional operator precedence.
 
-### Arithmetic Operators
+### Arithmetic
 
 ```
     + (Addition)
     - (Subtraction)
     * (Multiplication)
 ```
-### Boolean Operators
+### Boolean
 
 ```
     & (AND)
@@ -382,13 +391,13 @@ Within the supported operators FSL uses conventional operator precedence.
     ^ (XOR)
     ~ (Bitwise NOT)
 ```
-### Range Operators
+### Range
 
 ```
     [M:N] (range select)
     [M]   (index)
 ```
-### Relational Operators
+### Relational
 
 ```
     ==  (Equal to)
@@ -398,7 +407,7 @@ Within the supported operators FSL uses conventional operator precedence.
     >=  (Greater than or equal to)
     <=  (Less than or equal to)
 ```
-### Logical Operators
+### Logical
 
 ```
     &&  (Logical AND)
@@ -406,13 +415,13 @@ Within the supported operators FSL uses conventional operator precedence.
     !   (Logical NOT)
 ```
 
-### Assignment Operator
+### Assignment
 
 ```
     =    (Simple assignment)
 ```
 
-### Concatenation Operator
+### Concatenation
 
 Concatenation expressions use a style similar to verilog, {a,b,c};
 
@@ -615,7 +624,7 @@ The FSL API will throw an exception if it can not match the elements in ioput to
 
 Note: The FSL syntax implies a copy-on-write idiom. However by mapping the ioput.input and ioput.output objects to the same buffer a modification in-place idiom can be implemented. This isolates the style used in the conversion clause from these external mechanics.
 
-### ioput methods
+### ioput Methods
 
 ioput elements have these methods available. 
 
@@ -631,7 +640,7 @@ ioput elements have these methods available.
                          at sequence.index, and inserts instr 
 ```
 
-## Sequence clause
+## Sequence Clause
 
 The sequence clause is used to match the incoming instructions found in ioput.input to the current transform.
 
@@ -725,7 +734,7 @@ This results in a transform to a generalized fusion op of shift-left followed by
 
 If the constraints clause implements operand restrictions, the instruction sequence should be expressed using the abstract assembly syntax which allows the operands to be referenced by name. As shown in the GA/GB/GC example above.
 
-### Optional instructions
+### Optional Instructions
 
 The example sequences above have an implied strict ordering. Another example is shown below. 
 
@@ -761,7 +770,7 @@ _req_ and _req_ 1 are equivalent
 Note: \_opt\_ and \_req\_ are also supported for the UID case.
 Note: Mixing UID and abstract operand sequences is also supported. 
 
-### Sequence methods
+### Sequence Methods
 
 sequence objects have implicit data members, they are not directly assesible in the FSL syntax.
 
@@ -775,7 +784,7 @@ sequence objects have implicit data members, they are not directly assesible in 
               instruction
 ```
 
-## Constraints clause
+## Constraints Clause
 
 The constraints clause defines relationships between operands, the machine implementation and known transformable sequences.
 
@@ -850,7 +859,7 @@ A sequence clause consisting of two instructions is shown for reference.
 
 Using RISC-V nomenclature, the constraints clause specifies that, in order to match this transform in this contrived example, the destination register for the first (g1) and second instructions (g2) must not be the same. Further constants u6 contants c1 and c2 have a specific (contrived) limitation between bit 0 of c1 and bit 1 of c2. 
 
-### Constraints methods
+### Constraints Methods
 
 The constraints clause has a single method. This is not accessible to the FSL syntax.
 
@@ -862,7 +871,7 @@ In addition to the .state method, the constraints clause declarations
 are made available without prefix to the conversion clause. This is
 described in the next section.
 
-## Conversion clause 
+## Conversion Clause 
 
 The conversion clause performs the instruction morphing operation(s) to create
 the new instruction(s). Conversion syntax supports fracture or fusion, generally any binary translation to any encoding. 
@@ -938,7 +947,7 @@ The FSL API defines a functor (function object) which performs a default morphin
 
 Line #4 replaces the instruction tuple matched by the sequence object with the morphed instruction. In this case the input buffer is modified using .replace(). Depending on needs and implementation the other methods available in the ioput object provide alternative semantics.
 
-### Conversion methods
+### Conversion Methods
 
 The conversion clause has a single method.
 
@@ -948,13 +957,26 @@ The conversion clause has a single method.
 ```
 
 # Example Use Cases
-TBD
+What follows are more detailed walk throughs of FSL uses cases. These are fusion cases in this version of the document.
+
+## Common Prolog
+The examples that follow will share a common Prolog declaration. To reduce duplication this is documented here. This is a RISC-V specific prolog that assumes a super-scalar micro-architecture similar to Olympia or BOOM, and the RV64I-GC ISA extension set.
+
+```
+prolog plog1
+{
+  isa   rv64gc
+  uarch ua
+  ioput iop
+}
+```
+
 
 # Tools and Utilities
 
 A summary of tools and utilities useful for instruction transform work. 
 
-## Condor FSL API
+## Condor FSL API and Interpreter
 
 FSL domain specific language is a component of a larger C++ API. With this API
 it is possible to directly create instruction transforms in C++, or through
@@ -962,10 +984,9 @@ the FSL domain specific language or other ad hoc schemes. The API has
 been tested with the Condor Performance Model and the Olympia 
 performance model.
 
-The FSL API shares a repository with the Olympia performance model.  The
-shared URL is contained here:
-https://github.com/riscv-software-src/riscv-perf-model/tree/master/fusion.
-Doxygen documentation is available for this API.
+The FSL API and FSL Interpreter share a public GIT repo.  https://github.com/Condor-Performance-Modeling/fsl
+
+The repo includes the available documentation in PDF, markdown and html form. Doxygen is used to create the html references. The repo also includes support collateral such VIM syntax highlighting files.
 
 ## Olympia Performance Model
 
@@ -984,18 +1005,13 @@ class types.
 The repository URL is https://github.com/sparcians/mavis/tree/main. Doxygen
 documentation is available for this API.
 
-## STF Library 
-
-The STF (Simulation Tracing Format) library provides an API for 
-reading and generation of STF trace files.
-
-The repository URL is https://github.com/sparcians/stf_lib. Doxygen
-documentation is available for this API.
+A Mavis compatible MachineInfo header is supplied in main FSL repo.
 
 ----------------------------------------------------------------
 # Appendix
 
 ## FSL BNF
+Included below is the FSL Interpreter grammar in BNF form converted from the native Bison form.
 
 ```
 <top> ::= <source_line> | <top> <source_line>
@@ -1171,12 +1187,10 @@ documentation is available for this API.
 <constant> ::= CONSTANT | HEX_CONST | VLOG_CONST | QSTRING
 ```
 
-
-
 ## FSL Instruction Types
 
 Instruction types have a mapping to the ISA description API. The
-lower case strings here are mapped to an equivalent type in the ISA
+lower case strings here are mapped to an equivalent type in the ISA description
 API. When assigning a type to an FSL instr object use the lower
 case strings below, without quotes.
 
@@ -1222,12 +1236,6 @@ case strings below, without quotes.
 "csr"                CSR
 ```
 
-## Syntax Highlight Control Files
-
-### VIM
-```
-<FIXME: publish the path to this file as found in the git repo>
-```
 
 1. References
 
