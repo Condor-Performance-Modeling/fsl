@@ -1,5 +1,5 @@
 %{
-#include "fslparser.h"
+#include "FslParser.h"
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -37,7 +37,7 @@ extern void yyerror(const char *s);
 %%
 
 top:
-    source_line
+    /* */
   | top source_line
   ;
 

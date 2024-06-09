@@ -1,0 +1,4 @@
+[submodule "modules/mavis"]
+	path = modules/mavis
+	url = https://github.com/sparcians/mavis
+  ignore = dirty

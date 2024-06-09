@@ -8,7 +8,11 @@ date: "2024-06-03"
 
 ## Table of contents
 
-1. Document History
+1. Document Information
+    1. Change History
+    1. Related Documents
+    1. TODOs
+    1. Future Features
 
 1. Introduction to FSL
     1. High Level Operation
@@ -77,22 +81,32 @@ date: "2024-06-03"
 1. References
 
 ----------------------------------------------------------------
-# Document History
+# Document Information
+
+## Change History
 
 | Version |    Date    |  Contact  | Description                           |
 |:-------:|:----------:|:---------:|:--------------------------------------|
+|  x.4    | 2024.07.xx | Jeff Nye  | Prepared for wider review, related documents, expanding language description, detailed use cases, BNF |
 |  x.3    | 2024.06.03 | Jeff Nye  | resolving all SIG review comments and previous TODOs. 1st draft of user reference in preparation for wider review.
 |  x.2    | 2024.03.10 | Jeff Nye  | removed operators, div/mod not needed,++/--/extensive assignment operators violate S
 |  x.1    | 2024.03.08 | Jeff Nye  | typos, replace asserts with exceptions, grammar changes
 |  x.0    | 2024.03.04 | Jeff Nye  | circulated for comment
 
+## Related Documents
+- FSL Repo
+    - https://github.com/Condor-Performance-Modeling/fsl
+- Olympia Repo
+    - https://github.com/riscv-software-src/riscv-perf-model
+- RISC-V Organization Specifications
+    - https://riscv.org/technical/specifications/
+- An Introduction to Assembly Programming with RISC-V
+    - https://riscv-programming.org/book.html
 
-### TODOs
+## TODOs
+- Placeholder
 
-- Publish the FSL git repo URL
-- Provide a list of related documents, such as the RISC-V ISA documents, the FSL API user reference and doxygen files, etc.
-
-### Future features
+## Future features
 - The default uarch methods could be extended using template semantics. Extending the methods through specialization of MachineInfo could also extend the syntax of FSL by some restructure of the grammar to treat ID's as possible known methods.
 
 ----------------------------------------------------------------
@@ -194,34 +208,25 @@ transform uf10
 
 ## Is/Is not
 
-FSL is not a programming language; it is a "constrained transformation expression language". FSL operates on stylized or symbolic microprocessor instructions, within this domain, many aspects of a general programming languages are not required by FSL.
-
-The FSL syntax style is a reduced boilerplate style of C. e.g. braces are 
+- FSL is not a programming language
+     - FSL is a "transformation expression language"
+- FSL's target domain is expression of binary transformation of processor instructions
+    - Within the domain, many aspects of general programming languages are not required or are made implicit
+- FSL operates on stylized or symbolic microprocessor instructions    
+- The FSL syntax style is a reduced boilerplate style of C. e.g. braces are 
 used, no semi-colons, indentation is not a syntax element.
-
-There are no user defined functions. However see the `define.
-
-There are a limited number of data types unique to FSL.
-
-The standard C native types are not required by the FSL syntax.
-
-This is no need for container types. 
-
-The typical native types such as float, double are not required by FSL and  therefore not inferred. 
-
-Integer constant types are signed or unsigned and have an explicit bit width.
-
-FSL uses single assignment for variables.
-
-There are no console or file I/O mechanisms.
-
-Expression operations are limited.
-
-Arithmetic expressions are limited.
-
-const'ness is not a feature of FSL.
-
-There is a support library called fsl, which provides utility functions. This is the only true namespace in FSL.
+- There are no user defined functions. However see the `define element.
+- There are a limited number of data types unique to FSL.
+    - Integer constant types are signed or unsigned and have an explicit bit width.
+    - This is no need for container types.
+    - Most other standard C native types are not required by the FSL syntax.
+    - Floating point types are not required by FSL
+- FSL uses single assignment for variables.
+    - Compound assignment expressions and operations are not required
+- There are no console or file I/O mechanisms.
+- const'ness is not a feature of FSL.
+- There is a support library called fsl, which provides utility functions.
+    - This is the only true namespace in FSL, "fsl.".
 
 # Language Description
 

@@ -1,6 +1,6 @@
-#include "options.h"
-#include "msg.h"
-#include "fslparser.h"
+#include "Options.h"
+#include "Msg.h"
+#include "FslParser.h"
 #include <iostream>
 
 Options *Options::instance = 0;

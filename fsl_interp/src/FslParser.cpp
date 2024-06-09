@@ -1,7 +1,7 @@
 //! \file fslparser.cpp  wrapper around parser state machine(s)
-#include "fslparser.h"
-#include "msg.h"
-#include "options.h"
+#include "FslParser.h"
+#include "Msg.h"
+#include "Options.h"
 #include <filesystem>
 #include <iomanip>
 using namespace std;

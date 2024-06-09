@@ -1,8 +1,8 @@
 // HEADER PLACEHOLDER
 // contact Jeff Nye, jeffnye-gh, Condor Computing Corp.
 //
-#include "msg.h"
-#include "options.h"
+#include "Msg.h"
+#include "Options.h"
 #include <iostream>
 using namespace std;
 
@@ -39,9 +39,7 @@ void Options::setupOptions(int ac, char** av)
 
     po::notify(vm);
     if (!checkOptions(vm, stdOpts, true))
-    {
         exit(1);
-    }
 }
 
 // --------------------------------------------------------------------
@@ -56,18 +54,23 @@ void Options::buildOptions(po::options_description & stdOpts)
 
     ("version,v", "report version and exit")
 
+    ("stf", po::value<string>(&stf_file), "STF input file")
+
     ("output,o", po::value<string>(&output_file),
-     "Output file")
+     "Log output file")
 
-    ("input_file,i", po::value<vector<string>>(&input_files),
-     "Multiple --input_file accepted")
+    ("isa_file", po::value<vector<string>>(&isa_files),
+     "Multiple --isa_file accepted")
 
-    ("trace_en", po::bool_switch(&trace_en) ->default_value(false),
-         "Parser trace enable")
+    ("fsl_file", po::value<vector<string>>(&fsl_files),
+     "Multiple --fsl_file accepted")
 
-    ("verbose", po::bool_switch(&verbose) ->default_value(false),
-         "Verbose message control")
-    ;
+    ("fsl_syntax_file", po::value<vector<string>>(&fsl_syntax_files),
+     "Syntax stress test files. Multiple "
+     "--fsl_syntax_file accepted")
+
+    ("tb_verbose", po::bool_switch(&tb_verbose) ->default_value(false),
+         "Test bench message control");
 }
 // clang-format on
 // --------------------------------------------------------------------
@@ -79,12 +82,12 @@ bool Options::checkOptions(po::variables_map & vm,
 {
     if (firstPass)
     {
-        if (vm.count("help") != 0u)
+        if (vm.count("help"))
         {
             usage(stdOpts);
             return false;
         }
-        if (vm.count("version") != 0u)
+        if (vm.count("version"))
         {
             version();
             return false;
@@ -96,7 +99,7 @@ bool Options::checkOptions(po::variables_map & vm,
 
 // --------------------------------------------------------------------
 // --------------------------------------------------------------------
-void Options::version()
+void Options::version() const
 {
     msg->imsg("");
     msg->imsg("Fusion api tester");
