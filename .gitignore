@@ -1,6 +1,8 @@
-interp/bin/*
-interp/obj/*
+fsl_interp/bin/
+fsl_interp/obj/
 modules/
 docs/*_warn.log
 test/api/PASSFAIL
 test/interp/PASSFAIL
+release/
+build/
