@@ -1,31 +1,41 @@
 cmake_minimum_required(VERSION 3.10)
-project(Docs)
+project(fsl_docs)
 
-# Custom targets for documentation
+set(DOXY doxygen)
+set(CCBD ${CMAKE_CURRENT_BINARY_DIR})
+set(CCSD ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Path to the Doxyfile configurations
+set(DOXYFILE_INTERP ${CCSD}/DoxyInterp)
+set(DOXYFILE_API ${CCSD}/DoxyApi)
+
+
+# Define the docs_interp target
 add_custom_target(docs_interp
-    COMMAND ${CMAKE_COMMAND} -E make_directory docs_interp
-    COMMAND ${DOXY} DoxyInterp
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Generating docs_interp"
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CCBD}/docs_interp
+    COMMAND ${DOXY} ${DOXYFILE_INTERP}
+    WORKING_DIRECTORY ${CCSD}
+    COMMENT "Generating documentation for interp"
 )
 
+# Define the docs_api target
 add_custom_target(docs_api
-    COMMAND ${CMAKE_COMMAND} -E make_directory docs_api
-    COMMAND ${DOXY} DoxyApi
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Generating docs_api"
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CCBD}/docs_api
+    COMMAND ${DOXY} ${DOXYFILE_API}
+    WORKING_DIRECTORY ${CCSD}
+    COMMENT "Generating documentation for API"
 )
 
-add_custom_target(docs ALL
+# Define the docs_internal target that depends on docs_interp and docs_api
+add_custom_target(docs_internal
     DEPENDS docs_interp docs_api
     COMMENT "Generating all documentation"
 )
 
-## Custom clean target
-#add_custom_target(custom_clean
-#    COMMAND ${CMAKE_COMMAND} -E remove_directory docs_interp
-#    COMMAND ${CMAKE_COMMAND} -E remove_directory docs_api
-#    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-#    COMMENT "Cleaning up generated files"
-#)
-#
+# Define the clean_docs target 
+add_custom_target(clean_docs
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CCSD}/docs_interp
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CCSD}/docs_api
+    COMMAND ${CMAKE_COMMAND} -E remove ${CCSD}/*_warn.log
+    COMMENT "Cleaning documentation directories and log files"
+)

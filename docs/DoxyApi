@@ -10,7 +10,7 @@ WARN_IF_DOC_ERROR      = YES
 WARN_NO_PARAMDOC       = NO
 WARN_AS_ERROR          = NO
 WARN_FORMAT            = "$file:$line: $text"
-WARN_LOGFILE           = ./doxyapi_warn.log
+WARN_LOGFILE           = ./docs_api_warn.log
 #---------------------------------------------------------------------------
 # Project related configuration options
 #---------------------------------------------------------------------------
@@ -19,7 +19,7 @@ PROJECT_NAME           = "CAM Fusion API"
 PROJECT_NUMBER         =
 PROJECT_BRIEF          =
 PROJECT_LOGO           =
-OUTPUT_DIRECTORY       =
+OUTPUT_DIRECTORY       = 
 CREATE_SUBDIRS         = NO
 ALLOW_UNICODE_NAMES    = NO
 OUTPUT_LANGUAGE        = English
@@ -244,8 +244,8 @@ EXTRA_SEARCH_MAPPINGS  =
 #---------------------------------------------------------------------------
 # Configuration options related to the LaTeX output
 #---------------------------------------------------------------------------
-GENERATE_LATEX         = YES
-LATEX_OUTPUT           = docs_api/latex
+GENERATE_LATEX         = NO
+LATEX_OUTPUT           = 
 LATEX_CMD_NAME         =
 MAKEINDEX_CMD_NAME     = makeindex
 LATEX_MAKEINDEX_CMD    = makeindex

@@ -9,12 +9,27 @@ Repo for FSL Interpreter, FSL API and a fusion implementation
 - fsl/fusion - Instruction fusion implementation for Olympia
 - fsl/test   - Combined API and interpreter tests 
 
-# Pre-req 
+# Submodules
 
-To customize for alternate build environments, edit Vars.mk.
+FSL has a copy of the Mavis sub-module,  https://github.com/sparcians/mavis
+ 
+# Quick start
 
-- Doxygen should be in your path
-- GCC/G++ should be in your path
+```
+git clone --recurse-submodules https://github.com/Condor-Performance-Modeling/fsl.git
+cd fsl
+mkdir release
+cd release
+cmake ..
+make -j32
+
+To make the docs:
+make docs
+
+The html documentation will be in fsl/docs/docs_interp and fsl/docs/docs_api.
+See below for user guides and references.
+
+```
 
 # Documentation - fsl/docs
 
@@ -37,13 +52,13 @@ Some of the references to docs below are forward looking to future docs.
                                        You should consult the official RV
                                        documents for critical uses.
 
-  docs/interp/html/index.html       -- Doxygen generated implementation
+  docs/docs_interp/index.html       -- Doxygen generated implementation
                                        documents for the interpreter.
-                                       Generate with the make build system
+                                       Create with CMake.
 
-  docs/api/html/index.html          -- Doxygen generated implementation
+  docs/docs_api/index.html          -- Doxygen generated implementation
                                        documents for the C++ API.
-                                       Generate with the make build system
+                                       Create with CMake.
 ```
 
 # FSL Examples
