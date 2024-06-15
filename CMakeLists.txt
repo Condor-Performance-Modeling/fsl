@@ -1,8 +1,19 @@
 cmake_minimum_required(VERSION 3.10)
 project(fsl)
 
+# Check if FSL_MAVIS_PATH is set
+if(DEFINED FSL_MAVIS_PATH)
+  set(FSL_MAVIS_DIR ${FSL_MAVIS_PATH})
+else()
+  set(FSL_MAVIS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/modules/mavis")
+endif()
+
+if(NOT TARGET mavis)
+  add_subdirectory(${FSL_MAVIS_DIR})
+endif()
+  
 # Include subdirectories
-add_subdirectory(modules/mavis)
+#add_subdirectory(modules/mavis)
 add_subdirectory(fsl_interp)
 add_subdirectory(fsl_api)
 add_subdirectory(docs EXCLUDE_FROM_ALL)
