@@ -9,7 +9,8 @@ add_subdirectory(docs EXCLUDE_FROM_ALL)
 
 # Custom target for building documentation
 add_custom_target(docs
-    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target docs_internal
+    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}
+                             --target docs_internal
     COMMENT "Generating all documentation"
 )
 
