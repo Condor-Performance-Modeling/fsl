@@ -7,16 +7,19 @@ add_subdirectory(interp)
 
 # Add test targets
 add_custom_target(run_test_interp
-    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_SOURCE_DIR}/interp --target test
+    COMMAND ${CMAKE_COMMAND} 
+       --build ${CMAKE_CURRENT_BINARY_DIR}/interp --target run_interp_tests
     COMMENT "Running interp tests"
 )
 
 add_custom_target(run_test_api
-    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_SOURCE_DIR}/api --target test
+    COMMAND ${CMAKE_COMMAND} 
+       --build ${CMAKE_CURRENT_BINARY_DIR}/api --target run_api_tests
     COMMENT "Running API tests"
 )
 
-add_custom_target(run_all_tests ALL
+# Add the regress target to run all tests
+add_custom_target(regress ALL
     DEPENDS run_test_interp run_test_api
     COMMENT "Running all tests"
 )

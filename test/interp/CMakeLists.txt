@@ -17,7 +17,7 @@ set(INP_FILES
     syntax_tests/test4.fsl
 )
 
-set(INTERP_BIN ../../fsl_interp/bin/fslinterp)
+set(INTERP_BIN ${CMAKE_BINARY_DIR}/fsl_interp/bin/fsl_interp)
 
 # Test command
 add_custom_target(run_interp_tests
@@ -25,3 +25,7 @@ add_custom_target(run_interp_tests
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Running interpreter tests"
 )
+
+# Ensure the interpreter binary is built before running tests
+add_dependencies(run_interp_tests fsl_interp)
+
