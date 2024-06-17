@@ -4,24 +4,22 @@ project(TestInterp)
 # Include directories
 include_directories(../../fsl_interp/inc)
 
-# Input files
-set(INP_FILES
-    syntax_tests/_1_syntax_test.fsl
-    syntax_tests/_2_syntax_test.fsl
-    syntax_tests/sample1.fsl
-    syntax_tests/all_comments.fsl
-    syntax_tests/empty_file.fsl
-    syntax_tests/syntax1.fsl
-    syntax_tests/syntax2.fsl
-    syntax_tests/test3.fsl
-    syntax_tests/test4.fsl
-)
-
-set(INTERP_BIN ${CMAKE_BINARY_DIR}/fsl_interp/bin/fsl_interp)
+set(INTERP_BIN ${CMAKE_BINARY_DIR}/bin/fsl_interp)
 
 # Test command
 add_custom_target(run_interp_tests
-    COMMAND ${INTERP_BIN} --verbose ${INP_FILES} -o output.txt
+    COMMAND ${INTERP_BIN} 
+        --verbose 
+        -i syntax_tests/_1_syntax_test.fsl
+        -i syntax_tests/_2_syntax_test.fsl
+        -i syntax_tests/sample1.fsl
+        -i syntax_tests/all_comments.fsl
+        -i syntax_tests/empty_file.fsl
+        -i syntax_tests/syntax1.fsl
+        -i syntax_tests/syntax2.fsl
+        -i syntax_tests/test3.fsl
+        -i syntax_tests/test4.fsl
+        -o output.txt
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Running interpreter tests"
 )
