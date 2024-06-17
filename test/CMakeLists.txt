@@ -19,7 +19,7 @@ add_custom_target(run_test_api
 )
 
 # Add the regress target to run all tests
-add_custom_target(regress ALL
+add_custom_target(regress_fsl ALL
     DEPENDS run_test_interp run_test_api
     COMMENT "Running all tests"
 )

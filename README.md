@@ -29,6 +29,10 @@ make docs
 The html documentation will be in fsl/docs/docs_interp and fsl/docs/docs_api.
 See below for user guides and references.
 
+To run the fsl regression
+
+make regress_fsl
+
 ```
 
 # Documentation - fsl/docs

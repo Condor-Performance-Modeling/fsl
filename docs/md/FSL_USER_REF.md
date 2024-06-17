@@ -455,8 +455,8 @@ in the C pre-processor.  Within the constraints of the FSL language most
 pre-processor operations found in C will be available in FSL with slight
 changes for FSL syntax choices.
  
-Note that the typical # indicator, as in #include, is replaced with
-'`' as in `include.
+Note that the typical # indicator, as in \#include, is replaced with
+back tick (\`) as in `include.
 
 
 ### Conditional Inclusion
@@ -964,9 +964,10 @@ The conversion clause has a single method.
 # Example Use Cases
 What follows are more detailed walk throughs of FSL uses cases. These are fusion cases in this version of the document.
 
-## Common Prolog
-The examples that follow will share a common Prolog declaration. To reduce duplication this is documented here. This is a RISC-V specific prolog that assumes a super-scalar micro-architecture similar to Olympia or BOOM, and the RV64I-GC ISA extension set.
+In the discussions we will assume a performance model environment. This is not required but it is typical. The concepts in the description of the low level operations have direct correlation to RTL structures and methods. But we will use a performance model assumption.
 
+## Common Prolog
+The examples that follow will share a common Prolog declaration. To reduce duplication this is documented here. 
 ```
 prolog plog1
 {
@@ -975,7 +976,91 @@ prolog plog1
   ioput iop
 }
 ```
+This is a RISC-V specific prolog that assumes a super-scalar micro-architecture similar to Olympia or BOOM, and the RV64I-GC ISA extension set.
 
+The source for this file can be found in git at 
+```
+fsl/docs/fsl_examples/common_prolog.fh
+```
+
+## UID use case
+The first use case expresses a fused operation performing a shift left immediate by a logical shift right immediate. The transform is specified with a UID sequence.
+
+UID lists, in place of abstract instruction sequences, provide a low effort expression of instruction tuples. UID lists are appropriate when there is no need to reference operands in either the constraints or conversion clauses.
+
+In this example we have no restrictions on the operand combinations or the values of the immediate so a UID list is appropriate.
+
+A sample instruction sequence might be 
+```
+slli   x1, x2, 16
+srli   x3, x4,  8
+```
+
+An FSL transform which detects sequences of slli followed by srli, is expressed as shown below:
+```
+1: `include common_prolog.fh
+2: transform shli_shri
+3: {
+4:   prolog plg
+5:   sequence    { 0x0f 0x13 }
+6:   constraints { _pass_    }
+7:   conversion  { plg.iop.input.replace(_morph_) }
+8: }
+```
+The line numbers are added for explaination, they are not part of the FSL source. The full source for this example can be found in git at
+```
+fsl/docs/fsl_examples/shli_shri.fsl
+```
+This example helps show a number of features of FSL. 
+
+Line 1 shows the include syntax. The file extension, fh, is conventional, but not enforced in the syntax. 
+
+Line 2 declares the transform.
+
+Line 4 instantiates the prolog.
+
+Line 5 creates an anonymous sequence of UIDs. 
+
+The 0x0f and 0x13 constants in the sequence are the Mavis assigned unique identifiers. These identifiers are derived from the opcode of the instruction and are independent of the operands. 
+
+All UIDs references in this version of the examples will be from Mavis. Mavis can be replaced with any ISA description API by porting the API to FSL. See <FIXME: See FSL API USER REFERENCE>.
+
+Line 6 creates an anonymous constraints clause. In this example we are allowing any combination of operands and immediate values in the sequence, which is reasonable for this common fusion case. 
+
+Since we have no constraints we can use the \_pass\_ syntax to indicate the constraints are always met.
+
+Line 7 create an anonymous conversion clause. The expressed conversion replaces the existing matching sequence found in the input buffer, with the results of the morph operation.
+
+### Low level walk through
+We can now break down the low level operations involved in matching the UID sequence and performing the conversion.
+
+`plg.iop` is the name of the `ioput` object found in the included `prolog`.
+
+At compile time, plg.iop is linked to containers in the performance model that hold encoded instructions, instruction trace records, or the output of the transform operation. These can be a fetch buffer prior to decode in an RTL implementation, or instruction buffers in a performance model.
+
+FSL transforms are made known to the FSL API by declaration of FSL source code files, commonly through command line parameters of the performance model.
+
+At run time the FSL API sorts the list of transforms. By default the sort criterion places the transforms with the longest sequences first. The sort algorithm is a function object to allow alternative sort strategies. This is documented in <FIXME: See FSL API USER REFERENCE>.
+
+When the FSL API processes a transform, it scans the input container for instruction sequences that match those expressed in the sequence clause. If it finds no match, the API continues to the next transform.
+
+Later examples will show more complicated sequence matching cases. But determining a match in the case of a UID list is straight forward. The UID's of the instructions or trace records contained in the performance models input buffer, with `iop.input` serving as a reference to that buffer, are compared to the UID's expressed in the sequence clause. 
+
+If the FSL API finds a sequence match in iop.input, constraints are checked next. In this case there are no other constraints specified and the constraints checking returns \_pass\_.
+
+The semantics of replacing the matched instruction with the fused version is expressed in the `plg.iop.input.replace()`. `plg` is the name of the `prolog`, `plg.iop` is the name of the `ioput` object in the `prolog`, and `plg.iop.input` refers to the input buffer within the `ioput` object.
+
+This conversion clause is calling the `replace()` method on `plg.iop.input`. From previous discussions we know that a sequence match internally returns an index into the input container and a length, See <FIXME: INSERT SECTION CROSS REFERENCE>, which is sufficient to identify the pertinent instructions in input. 
+
+The `replace()` method removes the matched instructions and replaces them with the output of the default `_morph_` operation.
+
+The default morphing operation is a function object in the FSL API, defined by the user. In the default implementation FSL API calls the `morph()` method in Mavis. The default `morph()` operation creates an abstract instruction record from the matching contents of the input buffer. In the semantics used in the example the matched instructions in iop.input are replaced by the abstract instruction.
+
+This function object can be overloaded by the user, <FIXME: See FSL API USER REFERENCE>. Later examples present syntax that shows how to express exact control of the resulting transform.
+
+## Detailed use case
+
+HERE
 
 # Tools and Utilities
 
