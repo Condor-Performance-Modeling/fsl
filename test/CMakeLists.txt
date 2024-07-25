@@ -19,7 +19,8 @@ add_custom_target(run_test_api
 )
 
 # Add the regress target to run all tests
-add_custom_target(regress ALL
+# Customize the name to avoid conflict with Oly's regress
+add_custom_target(fsl_regress ALL
     DEPENDS run_test_interp run_test_api
     COMMENT "Running all tests"
 )
