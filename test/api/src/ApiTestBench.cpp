@@ -319,7 +319,7 @@ bool TestBench::basicMavisTest(bool debug)
     }
 
     InstUidListType uids;
-    for (const auto inst : instrs)
+    for (const auto & inst : instrs)
     {
         uids.emplace_back(inst->getUID());
     }

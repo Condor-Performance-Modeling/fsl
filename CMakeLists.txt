@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
+
+add_compile_options(-Wall -Werror)
+find_package(FLEX REQUIRED)
+find_package(BISON REQUIRED)
+
 project(fsl)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
