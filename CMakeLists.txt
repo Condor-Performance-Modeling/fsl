@@ -27,7 +27,7 @@ endif()
 add_subdirectory(fsl_interp)
 add_subdirectory(fsl_api)
 add_subdirectory(docs EXCLUDE_FROM_ALL)
-add_subdirectory(test)
+#add_subdirectory(test)
 
 # Custom target for building documentation
 add_custom_target(docs

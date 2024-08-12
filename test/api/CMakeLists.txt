@@ -10,7 +10,15 @@ include_directories(
 )
 
 # Source files
-file(GLOB ALL_SRC "src/*.cpp")
+#file(GLOB ALL_SRC "src/*.cpp")
+set(ALL_SRC
+  src/ApiTestBench.cpp
+  src/main.cpp
+  src/FslTests.cpp
+  src/TestData.cpp
+  src/TestFieldExtractor.cpp
+  src/Options.cpp
+)
 
 # Add executable
 add_executable(test_api_exec ${ALL_SRC})

@@ -22,59 +22,25 @@ extern int  check_type(void);
 extern void count(void);
 int column = 0;
 // ----------------------------------------------------------------
-//HERE
-//"->"       { count(); return(PTR_OP); }
-//"_Bool"    { CAPT(BOOL); }
-//"break"    { CAPT(BREAK); }
-//"register"   { CAPT(REGISTER); }
-//"static"     { CAPT(STATIC); }
-//"typedef"    { CAPT(TYPEDEF); }
-//"case"       { CAPT(CASE); }
-//"char"       { CAPT(CHAR); }
-//"_Complex"   { CAPT(COMPLEX); }
-//"const"      { CAPT(CONST); }
-//"continue"   { CAPT(CONTINUE); }
-//"default"    { CAPT(DEFAULT); }
-//"do"         { CAPT(DO); }
-//"double"     { CAPT(DOUBLE); }
-//"enum"       { CAPT(ENUM); }
-//"float"      { CAPT(FLOAT); }
-//"goto"       { CAPT(GOTO); }
-//"_Imaginary" { CAPT(IMAGINARY); }
-//"inline"     { CAPT(INLINE); }
-//"int"        { CAPT(INT); }
-//"long"       { CAPT(LONG); }
-//"restrict"   { CAPT(RESTRICT); }
-//"short"      { CAPT(SHORT); }
-//"signed"     { CAPT(SIGNED); }
-//"sizeof"     { CAPT(SIZEOF); }
-//"struct"     { CAPT(STRUCT); }
-//"switch"     { CAPT(SWITCH); }
-//"union"      { CAPT(UNION); }
-//"unsigned"   { CAPT(UNSIGNED); }
-//"void"       { CAPT(VOID); }
-//"volatile"   { CAPT(VOLATILE); }
-//"while"      { CAPT(WHILE); }
-//"..."      { count(); return(ELLIPSIS); }
-//">>="      { count(); return(RIGHT_ASSIGN); }
-//"<<="      { count(); return(LEFT_ASSIGN); }
-//"+="       { count(); return(ADD_ASSIGN); }
-//"-="       { count(); return(SUB_ASSIGN); }
-//"*="       { count(); return(MUL_ASSIGN); }
-//"/="       { count(); return(DIV_ASSIGN); }
-//"%="       { count(); return(MOD_ASSIGN); }
-//"&="       { count(); return(AND_ASSIGN); }
-//"^="       { count(); return(XOR_ASSIGN); }
-//"|="       { count(); return(OR_ASSIGN); }
-
 // ----------------------------------------------------------------
 #define YY_DECL extern int yylex()
-#define E(s) if(FP->TRACE_EN) cout<<dec<<FP->lineNo<<": "<<s<<endl;
-#define GET_STR yylval.str = new string(yytext)
-#define CAPT(X) { E(#X); count(); RET(X); }
 
-//Future feature - RET will help with capturing location info
-#define RET(TOK) return TOK
+#ifndef E
+#define E(s) if(FP->TRACE_EN) cout<<dec<<FP->lineNo<<": "<<s<<endl;
+#endif
+
+#ifndef GET_STR
+#define GET_STR yylval.str = new string(yytext)
+#endif
+
+//Future feature - _RET will help with capturing location info
+#ifndef _RET
+#define _RET(TOK) return TOK
+#endif
+
+#ifndef CAPT
+#define CAPT(X) { E(#X); count(); _RET(X); }
+#endif
 
 %}
 
@@ -183,7 +149,7 @@ _opt_        { /* get a unique ID for _opt_ symbols and add to symtab */
 {VLOG_DEC}       { CAPT(VLOG_CONST); }
 {VLOG_HEX}       { CAPT(VLOG_CONST); }
 
-\"([^"\\]|\\(.|\n))*\" { yylval.sval = strdup(yytext); RET(QSTRING); }
+\"([^"\\]|\\(.|\n))*\" { yylval.sval = strdup(yytext); _RET(QSTRING); }
 
 {L}({L}|{D})*       { count(); return(check_type()); }
 0[xX]{H}+{IS}?      { count(); return(CONSTANT); }
@@ -238,7 +204,7 @@ L?\"(\\.|[^\\"\n])*\"  { count(); return(STRING_LITERAL); }
 
 [\n]       { FP->lineNo += 1; count(); }
 [ \t]      { /* */ }
-.          { E(yytext[0]) RET(yytext[0]); }
+.          { E(yytext[0]) _RET(yytext[0]); }
 
 %%
 
