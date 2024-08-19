@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
 add_compile_options(-Wall -Werror)
-find_package(FLEX 2.6.4 REQUIRED)
-find_package(BISON 3.8.2 REQUIRED)
+find_package(FLEX 2.6 REQUIRED)
+find_package(BISON 3.8 REQUIRED)
 
 project(fsl)
 
