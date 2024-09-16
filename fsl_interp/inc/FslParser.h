@@ -3,6 +3,7 @@
 //
 //! \file FslParser.hpp  wrapper around parser state machine(s)
 #pragma once
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <string>
