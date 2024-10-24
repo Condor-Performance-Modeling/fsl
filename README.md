@@ -11,7 +11,7 @@ Repo for FSL Interpreter, FSL API and a fusion implementation
 
 # Submodules
 
-FSL has a copy of the Mavis sub-module,  https://github.com/sparcians/mavis
+FSL has a copy of the cpm.mavis sub-module,  [https://github.com/sparcians/mavis](https://github.com/Condor-Performance-Modeling/cpm.mavis)
  
 # Quick start
 
