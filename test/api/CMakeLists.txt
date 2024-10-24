@@ -6,7 +6,7 @@ include_directories(
     inc
     ../common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/modules/mavis
+    ${CMAKE_SOURCE_DIR}/modules/cpm.mavis
 )
 
 # Source files

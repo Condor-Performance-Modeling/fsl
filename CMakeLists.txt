@@ -15,7 +15,7 @@ set(CBD  ${CMAKE_BINARY_DIR})
 if(DEFINED FSL_MAVIS_PATH)
   set(FSL_MAVIS_DIR ${FSL_MAVIS_PATH})
 else()
-  set(FSL_MAVIS_DIR "${CCSD}/modules/mavis")
+  set(FSL_MAVIS_DIR "${CCSD}/modules/cpm.mavis")
 endif()
 
 if(NOT TARGET mavis)
@@ -23,7 +23,7 @@ if(NOT TARGET mavis)
 endif()
   
 # Include subdirectories
-#add_subdirectory(modules/mavis)
+#add_subdirectory(modules/cpm.mavis)
 add_subdirectory(fsl_interp)
 add_subdirectory(fsl_api)
 add_subdirectory(docs EXCLUDE_FROM_ALL)

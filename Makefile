@@ -7,12 +7,12 @@
         help \
         clean
 
-MAVIS_LIB = modules/mavis/release/libmavis.a
+MAVIS_LIB = modules/cpm.mavis/release/libmavis.a
 
 default: $(MAVIS_LIB) interp api test docs
 
 $(MAVIS_LIB):
-	cd modules/mavis; \
+	cd modules/cpm.mavis; \
 	mkdir -p release; \
 	cd release; \
 	cmake .. -DCMAKE_BUILD_TYPE=Release; \

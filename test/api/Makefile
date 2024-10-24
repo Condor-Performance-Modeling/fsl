@@ -2,10 +2,10 @@
 include ../../Vars.mk
 
 FSL_INC    = -I../..
-MAVIS_INC  = -I../../modules/mavis
+MAVIS_INC  = -I../../modules/cpm.mavis
 CMN_INC    = -I../common
 INTERP_LIB = -L../../fsl_interp/lib -lfslinterp
-MAVIS_LIB  = -L../../modules/mavis/release  -lmavis
+MAVIS_LIB  = -L../../modules/cpm.mavis/release  -lmavis
 
 ALL_SRC = $(wildcard src/*.cpp)
 SRC_OBJ = $(subst src,obj,$(ALL_SRC:.cpp=.o))
